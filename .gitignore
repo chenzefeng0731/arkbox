@@ -1,0 +1,24 @@
+__pycache__/
+*.pyc
+.DS_Store
+
+# 本地站点发布状态与 Qoder Sites 描述文件
+site/
+*.qoder.site
+
+# 真实账号产物（含真实昵称），公开仓库只放 demo 产物
+docs/P0-验收/
+docs/P1-demo/
+docs/P1-final/
+gacha_records.json
+docs/真实数据*
+
+# 过程文档（个人决策记录，不随仓库公开）
+产品策划书.md
+prompt-for-chatgpt.md
+docs/Kimi评审验收-P0P1P2.md
+docs/参考-ChatGPT独立方案原稿.md
+
+# 本工具运行残留
+.arkbox-*
+*.tmp

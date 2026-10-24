@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>寻访档案 · 演示博士</title>
+<style>
+:root{
+  --paper:#F4F4F1;--ink:#151718;--blue:#0098DC;--gold:#B8860B;--red:#C82A36;
+  --dim:rgba(21,23,24,.64);--dim2:rgba(21,23,24,.46);--line:rgba(21,23,24,.18);
+  --card:rgba(255,255,255,.66);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{background:#E9E9E4}
+body{background:var(--paper);color:var(--ink);font:16px/1.6 -apple-system,'PingFang SC','Helvetica Neue',sans-serif;position:relative;min-height:100vh}
+.grid{position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(21,23,24,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(21,23,24,.05) 1px,transparent 1px);background-size:32px 32px}
+.site-note{font:700 9px 'SF Mono',Menlo,monospace;color:var(--blue);letter-spacing:.4px;margin:0 0 10px;padding:5px 7px;border:1px solid rgba(0,152,220,.28);background:rgba(0,152,220,.05)}
+.hazard{height:10px;background:linear-gradient(90deg,#151718 0 46%,#0098DC 46% 54%,#151718 54% 100%)}
+.wrap{position:relative;max-width:860px;margin:0 auto;padding:22px 18px 42px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.header-left{min-width:0;flex:1}
+.kicker{display:flex;justify-content:space-between;gap:8px;font:700 9px 'SF Mono',Menlo,monospace;color:var(--blue);letter-spacing:1px}
+.kicker .file{color:var(--dim2);letter-spacing:.5px}
+h1{font-size:28px;font-weight:900;letter-spacing:.5px;margin-top:5px}
+h1 b{color:var(--blue)}
+.doctor{margin-top:5px;font:600 11px 'SF Mono',Menlo,monospace;color:var(--dim);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.doctor b{color:var(--ink)}
+.tenure{color:var(--blue);font-weight:700;white-space:nowrap}
+.chip{font:700 10px 'SF Mono',Menlo,monospace;color:var(--blue);border:1px solid rgba(0,152,220,.4);padding:2px 6px;background:rgba(255,255,255,.5)}
+.seal{width:78px;height:78px;border:3px solid rgba(200,42,54,.8);border-radius:50%;transform:rotate(9deg);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.seal-in{text-align:center;color:rgba(200,42,54,.85);border:2px solid rgba(200,42,54,.45);border-radius:50%;width:64px;height:64px;display:flex;flex-direction:column;justify-content:center;gap:1px}
+.seal .s1{font:900 8px 'SF Mono',Menlo;letter-spacing:1px}
+.seal .s2{font-size:7px}
+.seal .s3{font-size:8px;font-weight:700}
+.hero{margin:18px 0 6px}
+#hero-title{display:inline-block;background:var(--ink);color:#fff;border-left:9px solid var(--blue);font-size:42px;font-weight:900;line-height:1.15;padding:7px 22px 10px;transform:rotate(-1.5deg);clip-path:polygon(2% 8%,98% 0,100% 88%,0 100%);letter-spacing:2px;box-shadow:0 7px 20px rgba(0,152,220,.12)}
+#hero-caption{margin-top:10px;font-size:15px;color:var(--dim);line-height:1.5}
+.tags{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.tag{font:800 13px -apple-system,'PingFang SC';padding:3px 8px;border:1px solid var(--line);letter-spacing:.2px}
+.tag.gold{color:var(--gold);border-color:rgba(184,134,11,.5);background:rgba(184,134,11,.06)}
+.tag.black{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tag.blue{color:var(--blue);border-color:rgba(0,152,220,.45);background:rgba(0,152,220,.05)}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.stat{background:var(--card);border:1px solid rgba(21,23,24,.22);padding:11px 12px 9px;clip-path:polygon(0 0,calc(100% - 11px) 0,100% 11px,100% 100%,0 100%)}
+.stat .v{font:800 40px/1 'SF Mono',Menlo,monospace;letter-spacing:-1px}
+.stat.gold .v{color:var(--gold)}
+.stat.blue .v{color:var(--blue)}
+.stat .l{font-size:17px;font-weight:800;margin-top:4px}
+.stat .s{font:500 11px 'SF Mono',Menlo,monospace;color:var(--dim2);margin-top:2px;line-height:1.35}
+.overall{font:500 11px 'SF Mono',Menlo,monospace;color:var(--dim2);margin-top:7px;line-height:1.5}
+.banner{display:grid;grid-template-columns:repeat(3,1fr);background:var(--blue);color:#fff;margin-top:12px;clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+.bcell{padding:8px 8px 9px;border-left:1px solid rgba(255,255,255,.35);min-width:0}
+.bcell:first-child{border-left:0}
+.bk{display:block;font-size:12px;font-weight:800;opacity:.9}
+.bv{display:block;font:900 22px 'SF Mono',Menlo;letter-spacing:-1px;line-height:1.2}
+.bx{display:block;font:600 9px 'SF Mono',Menlo;opacity:.92;line-height:1.35;margin-top:1px;overflow:hidden;text-overflow:ellipsis}
+.section{display:flex;align-items:center;gap:8px;margin:24px 0 8px}
+.section .num{font:700 10px 'SF Mono',Menlo;color:var(--blue);letter-spacing:1px}
+.section .t{font-size:19px;font-weight:900;letter-spacing:.5px}
+.section .line{flex:1;height:1px;background:var(--line)}
+.note{font:500 11px 'SF Mono',Menlo;color:var(--dim2);line-height:1.6;margin:2px 0 10px}
+.pool{background:var(--card);border:1px solid rgba(21,23,24,.22);padding:13px 13px 11px;margin-bottom:10px;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%)}
+.pool.featured{border-color:rgba(0,152,220,.42);box-shadow:0 4px 16px rgba(0,152,220,.06)}
+.pool-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pool-title{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.pool-title h3{font-size:24px;font-weight:900;letter-spacing:.3px}
+.pool-count{font:700 12px 'SF Mono',Menlo;color:var(--dim);white-space:nowrap}
+.pool-count b{font-size:18px;color:var(--ink)}
+.ptag{font:800 10px -apple-system,'PingFang SC';padding:2px 6px;border:1px solid transparent;white-space:nowrap}
+.ptag.lim{background:var(--blue);color:#fff}
+.ptag.link{background:#fff;color:var(--ink);border-color:var(--line)}
+.ptag.std{background:rgba(21,23,24,.06);color:var(--dim);border-color:var(--line)}
+.ptag.other{background:#fff;color:var(--dim);border-color:var(--line)}
+.ptag.plain{background:rgba(255,255,255,.7);color:var(--dim);border-color:var(--line)}
+.ptag.recent{background:var(--blue);color:#fff}
+.pool-meta{font:500 10px 'SF Mono',Menlo;color:var(--dim2);margin-top:3px}
+.pool-story{font-size:14px;font-weight:800;margin-top:5px;color:rgba(21,23,24,.78)}
+.ops{display:flex;gap:7px;flex-wrap:wrap;align-items:flex-start;margin-top:9px}
+.op{position:relative;width:56px;flex:0 0 auto}
+.op.big{width:82px}
+.op .avatar{position:relative;aspect-ratio:1;background:rgba(21,23,24,.06);border:1px solid var(--line);overflow:hidden}
+.op img{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block}
+.op .fallback{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;font:900 22px 'SF Mono',Menlo;color:var(--dim2);background:rgba(21,23,24,.04);z-index:0}
+.op .avatar.noimg .fallback{display:flex}
+.op .nm{background:#000;color:#fff;font:700 9px -apple-system,'PingFang SC';text-align:center;padding:2px 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.op.big .nm{font-size:11px}
+.op .pull{font:500 8px 'SF Mono',Menlo;color:var(--dim2);text-align:center;margin-top:1px;white-space:nowrap}
+.op.big .pull{font-size:9px}
+.op .badge{position:absolute;top:2px;left:2px;background:var(--red);color:#fff;font:800 8px -apple-system;padding:1px 3px;z-index:2}
+.op .badge.dup{background:var(--gold);left:auto;right:2px}
+.more{width:56px;height:82px;display:flex;align-items:center;justify-content:center;font:800 16px 'SF Mono',Menlo;color:var(--dim2);border:1px dashed var(--line)}
+.bar-row{margin-top:9px}
+.bar-row.spark{margin-top:7px}
+.bar-info{display:flex;justify-content:space-between;gap:8px;font:600 10px 'SF Mono',Menlo;color:var(--dim);margin-bottom:3px}
+.bar-info b{color:var(--ink)}
+.bar{height:6px;background:rgba(21,23,24,.08);border:1px solid var(--line);position:relative;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue)}
+.bar-row.spark .bar i{background:var(--gold)}
+.bar-note{font:500 9px 'SF Mono',Menlo;color:var(--dim2);margin-top:2px;line-height:1.4}
+.tl{margin-top:12px}
+.tl-track{position:relative;height:8px;background:rgba(21,23,24,.07);border:1px solid var(--line);margin-top:14px}
+.seg{position:absolute;top:0;height:100%}
+.seg.g{background:var(--blue)}
+.seg.m{background:var(--gold)}
+.seg.r{background:var(--red)}
+.seg.p{background:repeating-linear-gradient(45deg,rgba(21,23,24,.35) 0 3px,rgba(21,23,24,.08) 3px 6px)}
+.dot{position:absolute;top:-5px;width:2px;height:18px;background:var(--ink)}
+.tl-label{position:absolute;top:-17px;transform:translateX(-50%);font:800 9px 'SF Mono',Menlo;white-space:nowrap}
+.tl-label.r{color:var(--red)}
+.tl-label.b{color:var(--blue)}
+.tl-ends{display:flex;justify-content:space-between;font:500 9px 'SF Mono',Menlo;color:var(--dim2);margin-top:2px}
+.events{margin-top:11px;border-top:1px solid var(--line)}
+.event{display:grid;grid-template-columns:54px 1fr 84px 60px;gap:4px;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(21,23,24,.08);font:500 10px 'SF Mono',Menlo}
+.e-at{color:var(--dim2)}
+.e-name{font:700 11px -apple-system,'PingFang SC';color:var(--ink)}
+.e-name span{font:700 9px 'SF Mono',Menlo;margin-left:4px;color:var(--dim2)}
+.e-name .up{color:var(--gold)}
+.e-name .off{color:var(--red)}
+.e-gap{color:var(--red);text-align:right;white-space:nowrap}
+.e-date{color:var(--dim2);text-align:right;font-size:9px;white-space:nowrap}
+.empty{font:500 11px 'SF Mono',Menlo;color:var(--dim2);padding:10px 0}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.type-card{background:var(--card);border:1px solid var(--line);padding:11px 12px}
+.type-top{display:flex;justify-content:space-between;gap:8px;font:800 13px -apple-system,'PingFang SC'}
+.type-top span{font:700 10px 'SF Mono',Menlo;color:var(--dim2)}
+.type-nums{display:flex;gap:8px;flex-wrap:wrap;font:500 9px 'SF Mono',Menlo;color:var(--dim);margin-top:5px}
+.type-pools{font:500 9px 'SF Mono',Menlo;color:var(--dim2);margin-top:4px;line-height:1.4}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px;background:var(--card);border:1px solid var(--line);padding:10px}
+.cmp-card{border-right:1px solid var(--line);padding-right:8px}
+.cmp-card:nth-child(2){border-right:0}
+.cmp-k{display:block;font:700 9px 'SF Mono',Menlo;color:var(--blue);letter-spacing:.5px}
+.cmp-card b{display:block;font-size:13px;margin-top:2px}
+.cmp-card strong{display:block;font:900 30px 'SF Mono',Menlo;letter-spacing:-1px;line-height:1.1}
+.cmp-s{display:block;font:500 8px 'SF Mono',Menlo;color:var(--dim2)}
+.cmp-delta{grid-column:1 / -1;border-top:1px solid var(--line);padding-top:6px;font:600 9px 'SF Mono',Menlo;color:var(--dim)}
+.cmp-delta b{color:var(--red)}
+.cmp-delta span{color:var(--dim2)}
+.title-chips{display:flex;gap:6px;flex-wrap:wrap}
+.title-chip{font:800 13px -apple-system,'PingFang SC';padding:6px 10px;border:1px solid var(--line);background:rgba(255,255,255,.6);color:var(--dim);cursor:pointer}
+.title-chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.title-chip:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.share-box{background:var(--card);border:1px solid var(--line);padding:12px}
+.share-box p{font-size:13px;line-height:1.65;color:rgba(21,23,24,.82);white-space:pre-wrap;margin-top:8px}
+.share-chips{display:flex;gap:5px;flex-wrap:wrap}
+.share-chip{font:700 10px 'SF Mono',Menlo;padding:4px 7px;border:1px solid var(--line);background:rgba(255,255,255,.55);color:var(--dim);cursor:pointer}
+.share-chip.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.copy{margin-top:9px;font:800 12px -apple-system,'PingFang SC';background:var(--blue);color:#fff;border:0;padding:7px 12px;cursor:pointer}
+.copy:active{transform:translateY(1px)}
+.privacy{font:500 9px 'SF Mono',Menlo;color:var(--dim2);margin-top:8px;line-height:1.5}
+.gaps{display:grid;gap:7px}
+.gap-card{background:rgba(184,134,11,.06);border-left:4px solid var(--gold);padding:8px 10px}
+.gap-card b{font-size:12px}
+.gap-card p{font:500 10px 'SF Mono',Menlo;color:var(--dim);line-height:1.55;margin-top:2px}
+.privacy-box{margin-top:9px;background:rgba(0,152,220,.05);border-left:4px solid var(--blue);padding:8px 10px}
+.privacy-box b{font-size:12px}
+.privacy-box p{font:500 10px 'SF Mono',Menlo;color:var(--dim);line-height:1.55;margin-top:2px}
+.audit{margin-top:20px;background:var(--card);border:1px solid var(--line);padding:12px 12px 14px;font-size:11px}
+.audit summary{cursor:pointer;font-weight:800;color:var(--dim)}
+.audit h3{font-size:12px;margin:14px 0 6px}
+.table-wrap{overflow-x:auto;border:1px solid var(--line)}
+.audit table{border-collapse:collapse;min-width:620px;width:100%;font-size:9px}
+.audit th,.audit td{border-bottom:1px solid var(--line);padding:5px 4px;text-align:left;vertical-align:top}
+.audit th{color:var(--dim2);font-weight:600;white-space:nowrap}
+.audit p{font:500 10px 'SF Mono',Menlo;color:var(--dim2);line-height:1.55;margin-top:8px}
+.footer{margin-top:26px;padding-top:10px;border-top:1px solid var(--line)}
+.footer .tri{font:700 9px 'SF Mono',Menlo;color:var(--dim2);letter-spacing:1px}
+.footer .mark{color:var(--blue)}
+.footer .barcode{display:flex;align-items:flex-end;height:16px;margin:7px 0}
+.footer .barcode i{background:var(--ink);height:100%;display:block}
+.foot-line{font:500 9px 'SF Mono',Menlo;color:var(--dim2);line-height:1.55}
+@media (max-width:430px){
+  .kicker .file{display:none}
+}
+@media (max-width:380px){
+  .wrap{padding:18px 13px 36px}
+  h1{font-size:25px}
+  #hero-title{font-size:36px}
+  .stat .v{font-size:35px}
+  .stat .l{font-size:15px}
+  .pool-title h3{font-size:21px}
+  .event{grid-template-columns:50px 1fr 78px 62px;font-size:8px}
+  .e-date{font-size:8px}
+  .types{grid-template-columns:1fr}
+  .kicker .file{display:none}
+  .kicker{font-size:9px;letter-spacing:1px}
+}
+@media (min-width:700px){
+  .summary{grid-template-columns:repeat(4,1fr)}
+  .types{grid-template-columns:repeat(3,1fr)}
+  #hero-title{font-size:48px}
+  .pool{padding:16px}
+  .op{width:64px}.op.big{width:96px}
+}
+@media print{
+  .grid,.hazard,.copy,.title-chips{display:none}
+  body{background:#fff}
+  .wrap{max-width:none}
+  .audit{break-inside:avoid}
+}
+</style></head><body>
+<div class="grid"></div><div class="hazard"></div>
+<main class="wrap">
+  
+  <header class="header">
+    <div class="header-left">
+      <div class="kicker"><span>ARKBOX // GACHA REPORT</span><span class="file">FILE NO. R-294</span></div>
+      <h1>寻访档案 <b>/</b> 欧非鉴定</h1>
+      <div class="doctor">DOCTOR <b>演示博士</b>
+        <span class="tenure">入职 2023-01-15 · 1380 天</span>
+        <span class="chip">本次记录 · 截至 2026-04-12</span>
+      </div>
+    </div>
+    <div class="seal"><div class="seal-in">
+      <span class="s1">ARKBOX</span><span class="s2">档案生成日</span>
+      <span class="s3">2026.10.25</span></div></div>
+  </header>
+
+  <section class="hero">
+    <h2 id="hero-title">双金还债</h2>
+    <p id="hero-caption">海渊巡游 10 抽双金，但石白深蓝之夜 60 抽才出</p>
+    <div class="tags"><span class="tag gold">双金</span><span class="tag black">还债</span><span class="tag blue">三顾茅庐 · 珊比×3</span><span class="tag blue">UP 命中 7/10</span></div>
+  </section>
+
+  <section class="summary">
+    <div class="stat gold"><div class="v">23.4</div>
+      <div class="l">池内均值 / 六星</div><div class="s">10 段 · 按池独立 · 不含当前垫</div></div>
+    <div class="stat blue"><div class="v">95.3%</div>
+      <div class="l">理论位置</div><div class="s">同段数理论样本 · 不是全服排名</div></div>
+    <div class="stat"><div class="v">10</div><div class="l">六星干员</div>
+      <div class="s">本区间 294 抽 · 3 池</div></div>
+    <div class="stat"><div class="v">7/10</div><div class="l">UP 命中</div>
+      <div class="s">70% · 只算已核验六星</div></div>
+  </section>
+  <div class="overall">整体 29.4 抽/六星（含当前垫 60 抽） · 期望 34.6 抽/六星 · 非全服排名</div>
+
+  <div class="banner">
+    <div class="bcell"><span class="bk">最欧</span><span class="bv">1 抽</span>
+      <span class="bx">克莱门莎 · 海渊巡游（首段）</span></div>
+    <div class="bcell"><span class="bk">最非</span><span class="bv">60 抽</span>
+      <span class="bx">结城理 · 石白深蓝之夜（首段）</span></div>
+    <div class="bcell"><span class="bk">UP 命中</span><span class="bv">7/10</span>
+      <span class="bx">70% · 只算已核验六星</span></div>
+  </div>
+
+  <div class="section"><span class="num">01</span><span class="t">卡池时间线</span><span class="line"></span></div>
+  <p class="note">按最近一次寻访倒序；每池独立统计，不跨池合并。每池首段可能承接档案外垫抽。</p>
+  <article class="pool featured">
+      <header class="pool-head">
+        <div class="pool-title"><h3>海渊巡游</h3>
+          <span class="ptag std">标准</span>
+          <span class="ptag plain">UP 2/2</span>
+          <span class="ptag recent">记录最近</span>
+        </div>
+        <div class="pool-count"><b>10</b> 抽 · <b>2</b> 六星</div>
+      </header>
+      <div class="pool-meta">2026-04-12 · 池内均值 4.0 · 最长 7</div>
+      <div class="pool-story">克莱门莎 ×2</div>
+      <div class="ops"><div class="op big">
+      <div class="avatar"><img src="https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/char_4231_clemnt.png"
+        alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg')">
+        <span class="fallback">克</span></div>
+      <span class="badge dup">×2</span>
+      <div class="nm">克莱门莎</div>
+      <div class="pull">第 1 抽 · UP</div>
+    </div><div class="op big">
+      <div class="avatar"><img src="https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/char_4231_clemnt.png"
+        alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg')">
+        <span class="fallback">克</span></div>
+      <span class="badge dup">×2</span>
+      <div class="nm">克莱门莎</div>
+      <div class="pull">第 8 抽 · UP</div>
+    </div></div>
+      <div class="bar-row">
+      <div class="bar-info"><span>六星垫 <b>2</b>/99</span>
+        <span>下抽六星率 2%</span></div>
+      <div class="bar"><i style="width:2.02%"></i></div>
+      <div class="bar-note">六星硬保底，不代表 UP 保底</div>
+    </div>
+      <div class="bar-note">该池型 UP 兑换井规则不统一，不计算井进度。</div>
+      <div class="tl"><div class="tl-track"><i class="seg g" style="left:0.000%;width:10.000%"></i><i class="seg g" style="left:10.000%;width:70.000%"></i><i class="seg p" style="left:80.000%;width:20.000%"></i><i class="dot" style="left:10.000%"></i><i class="dot" style="left:80.000%"></i><span class="tl-label b" style="left:90.000%">垫 2</span></div>
+      <div class="tl-ends"><span>0</span><span>10 抽</span></div></div>
+      <div class="events"><div class="event">
+          <div class="e-at">第 1 抽</div>
+          <div class="e-name">克莱门莎<span class="up">UP</span></div>
+          <div class="e-gap">+1 抽 · 首段</div>
+          <div class="e-date">2026-04-12</div>
+        </div><div class="event">
+          <div class="e-at">第 8 抽</div>
+          <div class="e-name">克莱门莎<span class="up">UP</span></div>
+          <div class="e-gap">+7 抽</div>
+          <div class="e-date">2026-04-12</div>
+        </div></div>
+    </article><article class="pool ">
+      <header class="pool-head">
+        <div class="pool-title"><h3>石白深蓝之夜</h3>
+          <span class="ptag link">联动</span>
+          <span class="ptag plain">UP 1/2</span>
+          
+        </div>
+        <div class="pool-count"><b>83</b> 抽 · <b>2</b> 六星</div>
+      </header>
+      <div class="pool-meta">2026-03-08 ~ 2026-03-17 · 池内均值 33.0 · 最长 60</div>
+      <div class="pool-story">第 60 抽才出 结城理 · 最长 60 抽</div>
+      <div class="ops"><div class="op small">
+      <div class="avatar"><img src="https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/char_4217_makoto.png"
+        alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg')">
+        <span class="fallback">结</span></div>
+      
+      <div class="nm">结城理</div>
+      <div class="pull">第 60 抽 · UP</div>
+    </div><div class="op small">
+      <div class="avatar"><img src="https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/char_4229_aphris.png"
+        alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg')">
+        <span class="fallback">谬</span></div>
+      <span class="badge off">歪</span>
+      <div class="nm">谬因</div>
+      <div class="pull">第 66 抽 · 歪</div>
+    </div></div>
+      <div class="bar-row">
+      <div class="bar-info"><span>六星垫 <b>17</b>/99</span>
+        <span>下抽六星率 2%</span></div>
+      <div class="bar"><i style="width:17.17%"></i></div>
+      <div class="bar-note">六星硬保底，不代表 UP 保底</div>
+    </div>
+      <div class="bar-row spark">
+      <div class="bar-info"><span>兑换井 <b>83</b>/120</span>
+        <span>还差 37 抽</span></div>
+      <div class="bar"><i style="width:69.20%"></i></div>
+      <div class="bar-note">按档案内当期抽数估算，以游戏内公告为准；不包含免费抽/赠送抽差异</div>
+    </div>
+      <div class="tl"><div class="tl-track"><i class="seg r" style="left:0.000%;width:72.289%"></i><i class="seg g" style="left:72.289%;width:7.229%"></i><i class="seg p" style="left:79.518%;width:20.482%"></i><i class="dot" style="left:72.289%"></i><i class="dot" style="left:79.518%"></i><span class="tl-label r" style="left:36.145%">60 抽</span><span class="tl-label b" style="left:89.759%">垫 17</span></div>
+      <div class="tl-ends"><span>0</span><span>83 抽</span></div></div>
+      <div class="events"><div class="event">
+          <div class="e-at">第 60 抽</div>
+          <div class="e-name">结城理<span class="up">UP</span></div>
+          <div class="e-gap">+60 抽 · 首段</div>
+          <div class="e-date">2026-03-08</div>
+        </div><div class="event">
+          <div class="e-at">第 66 抽</div>
+          <div class="e-name">谬因<span class="off">歪</span></div>
+          <div class="e-gap">+6 抽</div>
+          <div class="e-date">2026-03-11</div>
+        </div></div>
+    </article><article class="pool ">
+      <header class="pool-head">
+        <div class="pool-title"><h3>车辙与风的归所</h3>
+          <span class="ptag lim">限定</span>
+          <span class="ptag plain">UP 4/6</span>
+          
+        </div>
+        <div class="pool-count"><b>201</b> 抽 · <b>6</b> 六星</div>
+      </header>
+      <div class="pool-meta">2026-02-02 ~ 2026-02-15 · 池内均值 26.7 · 最长 58</div>
+      <div class="pool-story">珊比 ×3 · 三顾茅庐 · 最长 58 抽</div>
+      <div class="ops"><div class="op small">
+      <div class="avatar"><img src="https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/char_4235_thumpy.png"
+        alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg')">
+        <span class="fallback">珊</span></div>
+      <span class="badge dup">×3</span>
+      <div class="nm">珊比</div>
+      <div class="pull">第 18 抽 · UP</div>
+    </div><div class="op small">
+      <div class="avatar"><img src="https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/char_1039_thorn2.png"
+        alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg')">
+        <span class="fallback">引</span></div>
+      <span class="badge off">歪</span>
+      <div class="nm">引星棘刺</div>
+      <div class="pull">第 58 抽 · 歪</div>
+    </div><div class="op small">
+      <div class="avatar"><img src="https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/char_4235_thumpy.png"
+        alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg')">
+        <span class="fallback">珊</span></div>
+      <span class="badge dup">×3</span>
+      <div class="nm">珊比</div>
+      <div class="pull">第 75 抽 · UP</div>
+    </div><div class="op small">
+      <div class="avatar"><img src="https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/char_1015_aglna2.png"
+        alt="" loading="lazy" onerror="this.style.display='none';this.parentNode.classList.add('noimg')">
+        <span class="fallback">予</span></div>
+      
+      <div class="nm">予愿安洁莉娜</div>
+      <div class="pull">第 93 抽 · UP</div>
+    </div><div class="more">+2</div></div>
+      <div class="bar-row">
+      <div class="bar-info"><span>六星垫 <b>41</b>/99</span>
+        <span>下抽六星率 2%</span></div>
+      <div class="bar"><i style="width:41.41%"></i></div>
+      <div class="bar-note">六星硬保底，不代表 UP 保底</div>
+    </div>
+      <div class="bar-row spark">
+      <div class="bar-info"><span>兑换井 <b>201</b>/300</span>
+        <span>还差 99 抽</span></div>
+      <div class="bar"><i style="width:67.00%"></i></div>
+      <div class="bar-note">按档案内当期抽数估算，以游戏内公告为准；不包含免费抽/赠送抽差异</div>
+    </div>
+      <div class="tl"><div class="tl-track"><i class="seg g" style="left:0.000%;width:8.955%"></i><i class="seg m" style="left:8.955%;width:19.900%"></i><i class="seg g" style="left:28.856%;width:8.458%"></i><i class="seg g" style="left:37.313%;width:8.955%"></i><i class="seg r" style="left:46.269%;width:28.856%"></i><i class="seg g" style="left:75.124%;width:4.478%"></i><i class="seg p" style="left:79.602%;width:20.398%"></i><i class="dot" style="left:8.955%"></i><i class="dot" style="left:28.856%"></i><i class="dot" style="left:37.313%"></i><i class="dot" style="left:46.269%"></i><i class="dot" style="left:75.124%"></i><i class="dot" style="left:79.602%"></i><span class="tl-label r" style="left:60.697%">58 抽</span><span class="tl-label b" style="left:89.801%">垫 41</span></div>
+      <div class="tl-ends"><span>0</span><span>201 抽</span></div></div>
+      <div class="events"><div class="event">
+          <div class="e-at">第 18 抽</div>
+          <div class="e-name">珊比<span class="up">UP</span></div>
+          <div class="e-gap">+18 抽 · 首段</div>
+          <div class="e-date">2026-02-02</div>
+        </div><div class="event">
+          <div class="e-at">第 58 抽</div>
+          <div class="e-name">引星棘刺<span class="off">歪</span></div>
+          <div class="e-gap">+40 抽</div>
+          <div class="e-date">2026-02-02</div>
+        </div><div class="event">
+          <div class="e-at">第 75 抽</div>
+          <div class="e-name">珊比<span class="up">UP</span></div>
+          <div class="e-gap">+17 抽</div>
+          <div class="e-date">2026-02-02</div>
+        </div><div class="event">
+          <div class="e-at">第 93 抽</div>
+          <div class="e-name">予愿安洁莉娜<span class="up">UP</span></div>
+          <div class="e-gap">+18 抽</div>
+          <div class="e-date">2026-02-02</div>
+        </div><div class="event">
+          <div class="e-at">第 151 抽</div>
+          <div class="e-name">Mon3tr<span class="off">歪</span></div>
+          <div class="e-gap">+58 抽</div>
+          <div class="e-date">2026-02-09</div>
+        </div><div class="event">
+          <div class="e-at">第 160 抽</div>
+          <div class="e-name">珊比<span class="up">UP</span></div>
+          <div class="e-gap">+9 抽</div>
+          <div class="e-date">2026-02-09</div>
+        </div></div>
+    </article>
+  
+
+  <div class="section"><span class="num">02</span><span class="t">池型对照</span><span class="line"></span></div>
+  <div class="types"><div class="type-card">
+          <div class="type-top"><b>限定</b><span>201 抽</span></div>
+          <div class="type-nums"><span>6 六星</span>
+            <span>池内均值 26.7</span>
+            <span>UP 4/6</span></div>
+          <div class="type-pools">车辙与风的归所</div>
+        </div><div class="type-card">
+          <div class="type-top"><b>联动</b><span>83 抽</span></div>
+          <div class="type-nums"><span>2 六星</span>
+            <span>池内均值 33.0</span>
+            <span>UP 1/2</span></div>
+          <div class="type-pools">石白深蓝之夜</div>
+        </div><div class="type-card">
+          <div class="type-top"><b>标准</b><span>10 抽</span></div>
+          <div class="type-nums"><span>2 六星</span>
+            <span>池内均值 4.0</span>
+            <span>UP 2/2</span></div>
+          <div class="type-pools">海渊巡游</div>
+        </div></div>
+  <div class="compare">
+      <div class="cmp-card"><span class="cmp-k">最近一池</span>
+        <b>海渊巡游</b><strong>4.0</strong>
+        <span class="cmp-s">池内均值 · 10 抽 / 2 六星</span></div>
+      <div class="cmp-card"><span class="cmp-k">更早 2 池</span>
+        <b>合计</b><strong>28.2</strong>
+        <span class="cmp-s">池内均值 · 284 抽 / 8 六星</span></div>
+      <div class="cmp-delta">最近一池相对更早池：<b>-24.2 抽</b><br><span>只比较档案内可见间隔；最近池首段可能承接档案外垫抽。</span></div>
+    </div>
+
+  <div class="section"><span class="num">03</span><span class="t">换个说法</span><span class="line"></span></div>
+  <p class="note">点一个称号，标题会切换；海报使用主称号。所有候选都由同一份数据支撑。</p>
+  <div class="title-chips" id="title-chips"><button class="title-chip active" data-label="双金还债" data-caption="海渊巡游 10 抽双金，但石白深蓝之夜 60 抽才出" aria-pressed="true">双金还债</button><button class="title-chip" data-label="双金" data-caption="海渊巡游 10 抽双金" aria-pressed="false">双金</button><button class="title-chip" data-label="三顾茅庐" data-caption="珊比 ×3" aria-pressed="false">三顾茅庐</button><button class="title-chip" data-label="保底人" data-caption="最长池内 60 抽才出" aria-pressed="false">保底人</button><button class="title-chip" data-label="小欧" data-caption="10 段均值 23.4 抽，理论优于 95.3%" aria-pressed="false">小欧</button></div>
+
+  <div class="section"><span class="num">04</span><span class="t">分享文案</span><span class="line"></span></div>
+  <div class="share-box">
+    <div class="share-chips" id="share-chips"><button class="share-chip active" data-text="演示博士 的寻访档案｜双金还债：294 抽 10 六星，池内 23.4 抽/六星（10 段）。最佳十连 海渊巡游 10 抽双金。最长池内 60 抽才出。UP 7/10，理论位置优于约 95.3% 的同段数样本。数据范围 2026-02-02 ~ 2026-04-12，仅本档案区间；理论模型，非全服排名。
+#明日方舟 #寻访档案 #ArkBox">主文案</button><button class="share-chip" data-text="294 抽 / 10 六星 / 池内 23.4 抽 / 理论位置 95.3% / UP 7/10。双金还债，最长池内 60 抽。数据范围 2026-02-02 ~ 2026-04-12，理论模型，非全服排名。
+#明日方舟 #寻访档案 #ArkBox">数据版</button><button class="share-chip" data-text="双金还债｜294 抽 10 六星，池内 23.4 抽/六星，UP 7/10。
+#明日方舟 #寻访档案 #ArkBox">短句</button></div>
+    <p id="share-text">演示博士 的寻访档案｜双金还债：294 抽 10 六星，池内 23.4 抽/六星（10 段）。最佳十连 海渊巡游 10 抽双金。最长池内 60 抽才出。UP 7/10，理论位置优于约 95.3% 的同段数样本。数据范围 2026-02-02 ~ 2026-04-12，仅本档案区间；理论模型，非全服排名。
+#明日方舟 #寻访档案 #ArkBox</p>
+    <button class="copy" id="copy-btn" type="button">复制文案</button>
+    <div class="privacy">分享产物不包含 UID；如需隐藏昵称请用 --hide-nick。</div>
+  </div>
+
+  <div class="section"><span class="num">05</span><span class="t">数据说明</span><span class="line"></span></div>
+  <div class="gaps"><div class="gap-card"><b>历史区间未知</b><p>本档案区间（仅部分历史，完整性未知）；官方接口不提供账号全历史证明。</p></div><div class="gap-card"><b>标准/中坚垫抽无法追溯</b><p>海渊巡游 10 抽；更早同类型池的记录未知，因此不跨池合并，首段可能承接档案外垫抽。</p></div><div class="gap-card"><b>各池首段可能偏短</b><p>每池从档案内第一条记录起算；如果档案起点晚于池起点，首段会少算之前的垫抽。</p></div><div class="gap-card"><b>部分池型不计算兑换井</b><p>标准/中坚/特殊池的 UP 保底规则不统一，未用猜测值；限定 300、联动 120 的进度按档案内当期抽数估算。</p></div></div>
+  <div class="privacy-box"><b>隐私</b><p>产物不展示 UID · 分享产物不包含 UID；如需隐藏昵称请用 --hide-nick。</p></div>
+  <p class="note">数据档案：本档案区间（仅部分历史，完整性未知） · 已归档 294 抽（2026-02-02 ~ 2026-04-12）</p>
+
+  <details class="audit"><summary>数据口径与校验（点开核对）</summary>
+    <h3>按池独立明细</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>卡池</th><th>池型</th><th>抽数</th><th>六星</th><th>池内均值</th><th>当前垫</th><th>记录范围</th></tr></thead>
+      <tbody><tr><td>海渊巡游</td><td>标准</td>
+          <td>10</td><td>2</td>
+          <td>4.0</td>
+          <td>2</td><td>2026-04-12</td></tr><tr><td>石白深蓝之夜</td><td>联动</td>
+          <td>83</td><td>2</td>
+          <td>33.0</td>
+          <td>17</td><td>2026-03-08 ~ 2026-03-17</td></tr><tr><td>车辙与风的归所</td><td>限定</td>
+          <td>201</td><td>6</td>
+          <td>26.7</td>
+          <td>41</td><td>2026-02-02 ~ 2026-02-15</td></tr></tbody></table></div>
+    <h3>审计表</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>指标</th><th>原始值</th><th>公式/口径</th><th>显示值</th><th>一致</th></tr></thead>
+      <tbody><tr><td>本区间抽数</td><td>Σ池抽数 = 294</td><td>所有已归档池抽数之和</td><td>294</td><td>✓</td></tr><tr><td>六星干员</td><td>Σ池六星 = 10</td><td>rarity≥六星阈值</td><td>10</td><td>✓</td></tr><tr><td>池内间隔均值</td><td>234 ÷ 10 = 23.4</td><td>每池独立；首段从档案内首条记录起算</td><td>23.4 抽</td><td>✓</td></tr><tr><td>整体效率</td><td>294 ÷ 10 = 29.4</td><td>含未结算抽数；与间隔均值不等价</td><td>29.4 抽/六星</td><td>✓</td></tr><tr><td>当前垫抽</td><td>车辙与风的归所 41 + 石白深蓝之夜 17 + 海渊巡游 2</td><td>每池总抽数 - 最后六星位置；各池独立，不跨池合并</td><td>限定 41 / 联动 17 / 标准 2（池内，合计 60 仅作核对）</td><td>✓</td></tr><tr><td>跨池累计</td><td>未采用</td><td>官方标准/中坚六星计数跨池累计；森空岛无法证明更早历史完整，故本工具不合并</td><td>按池独立</td><td>✓</td></tr><tr><td>最长池内间隔</td><td>max(gaps) = 60</td><td>单池内第 N 抽就是出货抽，不是 N 连未出</td><td>60 抽（石白深蓝之夜，第 60 抽）（该池首段）</td><td>✓</td></tr><tr><td>最快池内间隔</td><td>min(gaps) = 1</td><td>单池内第 N 抽就是出货抽</td><td>1 抽（海渊巡游，第 1 抽）（该池首段）</td><td>✓</td></tr><tr><td>理论期望</td><td>34.6</td><td>2% / 51 抽起 +2% / 99 抽必出</td><td>34.6 抽</td><td>✓</td></tr><tr><td>理论位置</td><td>n=10，均值 23.4</td><td>1 - P(理论均值 ≤ 观测值)；exact；按池独立</td><td>优于约 95.3%；理论模型，非全服排名</td><td>✓</td></tr><tr><td>UP 命中</td><td>7 / 10</td><td>仅统计已核验池；0 池待核</td><td>UP 命中 7/10</td><td>✓</td></tr><tr><td>池型</td><td>PRTS limitedChar + RATE_UP_6</td><td>单 UP 不推断限定；联动/标准/限定分开</td><td>限定 / 联动 / 标准</td><td>✓</td></tr><tr><td>官方保底规则</td><td>标准/中坚跨池；限定/联动当期</td><td>仅作规则说明，不参与本报告计算；UP 保底/井另算</td><td>未跨池合并</td><td>✓</td></tr><tr><td>按池明细</td><td>车辙与风的归所 201抽（6六星；6段；垫 41） / 石白深蓝之夜 83抽（2六星；2段；垫 17） / 海渊巡游 10抽（2六星；2段；垫 2）</td><td>卡池目录 → 单池间隔 → 单池垫抽</td><td>限定 41 / 联动 17 / 标准 2</td><td>✓</td></tr><tr><td>数据完整性</td><td>本区间 3 池 / 294 抽</td><td>官方可查窗口内的记录；不保证更早历史</td><td>按池独立，不跨池合并；标准/中坚可见池：海渊巡游 10抽；更早同域记录无法证明；各池首段自档案首条记录起算，可能承接档案外垫抽</td><td>✓</td></tr><tr><td>称号候选</td><td>5 个</td><td>主称号 + 同一份数据可支撑的备选结果词</td><td>双金还债 / 双金 / 三顾茅庐 / 保底人 / 小欧</td><td>✓</td></tr><tr><td>兑换井</td><td>限定 300 / 联动 120</td><td>按档案内当期抽数估算；标准/中坚/特殊不硬算</td><td>车辙与风的归所 兑换井 201/300 · 还差 99 / 石白深蓝之夜 兑换井 83/120 · 还差 37</td><td>✓</td></tr><tr><td>数据缺口</td><td>4 项</td><td>覆盖范围、同步失败、截断、首段偏差</td><td>历史区间未知 / 标准/中坚垫抽无法追溯 / 各池首段可能偏短 / 部分池型不计算兑换井</td><td>✓</td></tr><tr><td>展示池</td><td>2 / 3</td><td>重点卡池 + 其他池汇总</td><td>重点 2 / 共 3 池 · 另有 1 池 10 抽 2 六星（海渊巡游，未展开）</td><td>✓</td></tr><tr><td>覆盖范围</td><td>2026-02-02 ~ 2026-04-12</td><td>归档记录；官方未提供账号全历史证明</td><td>本档案区间（仅部分历史，完整性未知）</td><td>✓</td></tr><tr><td>入职信息</td><td>status.registerTs</td><td>当前日期 - 入职日期 + 1；仅本地显示</td><td>入职 2023-01-15 · 1380 天</td><td>✓</td></tr><tr><td>隐私</td><td>UID 不进入报告模型</td><td>分享产物不展示 UID；昵称可用 --hide-nick 隐藏</td><td>演示博士</td><td>✓</td></tr></tbody></table></div>
+    <p>口径：六星间隔按池独立统计，不跨池合并；理论位置是模型推算，不是全服排名。当前垫抽 限定 41 / 联动 17 / 标准 2，各池独立，不能相加成一次连续。</p>
+  </details>
+
+  <footer class="footer">
+    <div class="tri"><span class="mark">◇</span> RHODES ISLAND <span>· ARKBOX ARCHIVE</span></div>
+    <div class="barcode"><i style="width:2px;margin-right:3px"></i><i style="width:2px;margin-right:4px"></i><i style="width:2px;margin-right:3px"></i><i style="width:2px;margin-right:4px"></i><i style="width:6px;margin-right:3px"></i><i style="width:6px;margin-right:4px"></i><i style="width:2px;margin-right:2px"></i><i style="width:3px;margin-right:3px"></i><i style="width:4px;margin-right:3px"></i><i style="width:2px;margin-right:2px"></i><i style="width:2px;margin-right:2px"></i><i style="width:6px;margin-right:4px"></i><i style="width:2px;margin-right:2px"></i><i style="width:2px;margin-right:3px"></i><i style="width:4px;margin-right:2px"></i><i style="width:6px;margin-right:4px"></i><i style="width:2px;margin-right:4px"></i><i style="width:4px;margin-right:2px"></i><i style="width:3px;margin-right:2px"></i><i style="width:3px;margin-right:3px"></i><i style="width:2px;margin-right:4px"></i><i style="width:3px;margin-right:3px"></i><i style="width:2px;margin-right:3px"></i><i style="width:6px;margin-right:2px"></i><i style="width:4px;margin-right:2px"></i><i style="width:6px;margin-right:3px"></i><i style="width:3px;margin-right:3px"></i><i style="width:2px;margin-right:4px"></i><i style="width:3px;margin-right:3px"></i><i style="width:6px;margin-right:2px"></i><i style="width:2px;margin-right:2px"></i><i style="width:4px;margin-right:3px"></i><i style="width:2px;margin-right:2px"></i><i style="width:2px;margin-right:2px"></i><i style="width:2px;margin-right:4px"></i><i style="width:6px;margin-right:3px"></i><i style="width:2px;margin-right:4px"></i><i style="width:4px;margin-right:4px"></i><i style="width:2px;margin-right:4px"></i><i style="width:2px;margin-right:2px"></i><i style="width:4px;margin-right:2px"></i><i style="width:6px;margin-right:2px"></i></div>
+    <div class="foot-line">本档案区间（仅部分历史，完整性未知） · 2026-02-02 ~ 2026-04-12 · 99 抽为六星硬保底 · 非官方玩家工具 · 数据本地 / 头像公开 CDN · 生成于 2026.10.25</div>
+  </footer>
+</main>
+<script>
+(function() {
+  var title = document.getElementById('hero-title');
+  var caption = document.getElementById('hero-caption');
+  var chips = document.querySelectorAll('.title-chip');
+  chips.forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      chips.forEach(function(c) { c.classList.remove('active'); c.setAttribute('aria-pressed','false'); });
+      chip.classList.add('active');
+      chip.setAttribute('aria-pressed','true');
+      title.textContent = chip.dataset.label;
+      caption.textContent = chip.dataset.caption || '';
+    });
+  });
+  var shareChips = document.querySelectorAll('.share-chip');
+  var shareText = document.getElementById('share-text');
+  shareChips.forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      shareChips.forEach(function(c) { c.classList.remove('active'); });
+      chip.classList.add('active');
+      if (shareText) shareText.innerText = chip.dataset.text;
+    });
+  });
+  var btn = document.getElementById('copy-btn');
+  var text = document.getElementById('share-text');
+  if (btn && text) {
+    btn.addEventListener('click', function() {
+      var value = text.innerText;
+      function done() { btn.textContent = '已复制'; setTimeout(function() { btn.textContent = '复制文案'; }, 1600); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(value).then(done).catch(function() { fallback(); });
+      } else { fallback(); }
+      function fallback() {
+        var ta = document.createElement('textarea'); ta.value = value; document.body.appendChild(ta);
+        ta.select(); try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  }
+})();
+</script>
+</body></html>
