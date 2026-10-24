@@ -345,6 +345,8 @@ def _screenshot_html(html_path, png, width, height):
     import subprocess
     try:
         subprocess.run([chrome, "--headless", "--disable-gpu", "--hide-scrollbars",
+                        # 2x 渲染：README/社媒展示会缩图，1x 物理像素在高分屏下发虚
+                        "--force-device-scale-factor=2",
                         f"--screenshot={png}", f"--window-size={width},{height}",
                         f"file://{os.path.abspath(html_path)}"],
                        capture_output=True, timeout=60)

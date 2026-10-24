@@ -1,9 +1,12 @@
 # ArkBox · 明日方舟寻访档案
 
-一个本地优先的《明日方舟》抽卡分析工具：通过森空岛 App 授权，读取官方可查寻访记录，生成
-**抽卡海报**、响应式长报告（页头带入职天数），并可按职业/星级/等级/潜能/时装筛选干员。
+中文 | [English](README_EN.md)
 
-![demo poster](docs/演示产物/demo-poster.png)
+一个本地优先的《明日方舟》抽卡分析工具：通过森空岛 App 授权，读取官方可查寻访记录，生成
+**抽卡海报**与响应式长报告（页头带入职天数）；另有「我的干员」独立命令，可按职业/星级/等级/潜能/时装
+筛选自己的干员并生成图鉴页。
+
+![demo poster](docs/demo-poster.png)
 
 非官方玩家工具，与鹰角网络无隶属或授权关系。代码 MIT，游戏数据与素材版权归原权利方。
 
@@ -35,33 +38,25 @@
 ```bash
 git clone https://github.com/chenzefeng0731/arkbox.git arkbox
 cd arkbox
-python3 install.py --target qoder
+python3 install.py
 ```
 
 方式二：不用 git——GitHub 页面绿色 Code 按钮 → Download ZIP，解压后进目录执行同一条命令。
 
-`--target` 可选 `auto`（默认，自动探测 Qoder / Claude / 通用目录）、`qoder`、`qoder-global`、
-`claude`、`generic`（装到 `~/.arkbox/skill/`）或自定义路径。
+安装器自动探测本机的 Agent skills 目录并把 skill 装进去；探测不到时装到通用位置
+`~/.arkbox/skill/arkbox`，不影响使用——让 Agent 读取其中的 `SKILL.md` 调用 `scripts/`，
+或直接运行 CLI（真正跨 Agent 的公约数是 Python CLI）。特殊需要可用 `--target <目录>`
+指定位置，见 `python3 install.py --help`。
 
-安装到 `~/.qoder-cn/skills/arkbox`。然后在 Qoder 里直接说：
+安装后在 Agent 里直接说：
 
 > 用 arkbox 分析我的明日方舟抽卡记录，同时生成海报和 HTML
 
-### 其他 Agent / 通用 CLI
-
-```bash
-python3 install.py --target generic
-```
-
-或直接使用仓库里的脚本，不安装：
+不安装也可以直接用仓库里的脚本：
 
 ```bash
 python3 skill/arkbox/scripts/ark_gacha.py analyze --poster --html
 ```
-
-如果目标 Agent 支持 skill 目录，把 `skill/arkbox/` 放进它的 skills 目录即可；不支持时，
-让 Agent 读取 `skill/arkbox/SKILL.md` 并调用 `scripts/`，或直接运行 CLI。`SKILL.md` 是适配层，
-真正跨 Agent 的公约数是 Python CLI。
 
 ## 首次登录
 
@@ -79,6 +74,10 @@ python3 skill/arkbox/scripts/ark_doctor.py
 
 大多数“凭证失效”不需要重新扫码：ArkBox 会用已保存的 `hg_token` 自动续期；只有 `hg_token`
 也失效时才需要重新登录。
+
+**登录能管多久？** 官方没有公开有效期承诺。社区工具的普遍经验：不修改密码、不在森空岛 App
+里登出或清理登录设备，一次登录可以一直用；做了这些操作会立即失效。失效后 `ark_doctor.py`
+会明确提示，重新运行上面的 login 即可，`~/.arkbox/archive/` 里的历史归档不受影响。
 
 ## 常用命令
 
@@ -108,7 +107,7 @@ python3 skill/arkbox/scripts/ark_gacha.py analyze \
 
 ## 交付物
 
-- **抽卡海报**：1080×1440 PNG，发社媒/评论区。
+- **抽卡海报**：1080×1440 逻辑尺寸，2x 渲染输出 2160×2880 PNG（高分屏与社媒压缩都清晰），发社媒/评论区。
 - **报告**：Qoder 用户发布为固定站点；其他 Agent 用户拿自包含 `report.html`。
 - 不交付海报源 HTML、手机截图、Markdown、说明文档；这些只用于源文件和验收。
 
