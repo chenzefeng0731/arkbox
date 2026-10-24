@@ -24,6 +24,13 @@ from datetime import datetime
 from skland_core import ArkApiError, load_creds, player_info, ensure_auth
 from ark_meta import load_meta
 
+# Windows 终端默认编码（cp1252/GBK）无法输出 ⚠/✓ 等符号：统一强制 UTF-8 输出
+for _stdio in (sys.stdout, sys.stderr):
+    try:
+        _stdio.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # 图源已验证 content-type=image/png（勿改回 yituliu——其路径返回 HTML fallback 假 200）
 AVATAR_URL = "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/{cid}.png"
 # 加载失败先换 jsdelivr 镜像（raw.githubusercontent.com 在部分网络不可达），再失败隐藏

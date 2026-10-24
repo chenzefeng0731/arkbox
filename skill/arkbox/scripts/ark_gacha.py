@@ -38,6 +38,13 @@ from skland_core import (
 from ark_odds import gap_report
 from ark_pools import PoolUpIndex
 from ark_archive import merge as archive_merge, load as archive_load, coverage_report
+
+# Windows 终端默认编码（cp1252/GBK）无法输出 ⚠/✓ 等符号：统一强制 UTF-8 输出
+for _stdio in (sys.stdout, sys.stderr):
+    try:
+        _stdio.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 from ark_domains import build_pool_stats, apply_pool_meta
 from ark_report import build_report, verify_report
 

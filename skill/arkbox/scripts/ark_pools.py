@@ -20,6 +20,13 @@ import os
 import sys
 import urllib.request
 
+# Windows 终端默认编码（cp1252/GBK）无法输出 ⚠/✓ 等符号：统一强制 UTF-8 输出
+for _stdio in (sys.stdout, sys.stderr):
+    try:
+        _stdio.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 POOL_URL = "https://weedy.prts.wiki/gacha_table.json"
 CACHE_PATH = os.path.expanduser("~/.arkbox/cache/gacha_pool_table.json")
 CACHE_VERSION = 3

@@ -2,6 +2,7 @@
 
 ## 0.7.1 — 2026-10-25
 
+- **Windows 兼容修复**：所有 CLI 入口强制 UTF-8 输出——Windows 终端默认编码（cp1252/GBK）无法输出 ⚠/✓ 等符号，此前在"卡池拉取失败"等场景会直接崩溃（CI 首跑发现）。
 - 上架准备落地：新增 `tests/e2e_check.py` 端到端冒烟（33 项断言：demo 全链路 / Markdown 口径 / 坏输入 / 未登录引导 / 站点目录）并挂入 CI；新增 Issue 模板（纠错 / 许愿）。
 - 大陆网络适配：干员元数据下载加 jsdelivr 镜像回退；海报/报告/图鉴头像加载失败自动换 jsdelivr 镜像再隐藏。
 - README 补强：开始之前的前置条件表（Python/森空岛 App/浏览器/qrcode）、Windows `python` 命令注记、Download ZIP 安装方式、已知边界（大陆网络 / 接口失效预期）、零依赖可审计说明。

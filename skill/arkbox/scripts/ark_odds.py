@@ -23,6 +23,14 @@
 """
 
 import math
+import sys
+
+# Windows 终端默认编码（cp1252/GBK）无法输出 ⚠/✓ 等符号：统一强制 UTF-8 输出
+for _stdio in (sys.stdout, sys.stderr):
+    try:
+        _stdio.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 BASE_SIX = 0.02
 RAMP_START = 51   # 第 51 抽开始递增（第 51 抽 4%）

@@ -27,6 +27,13 @@ import urllib.request
 import webbrowser
 from datetime import datetime
 
+# Windows 终端默认编码（cp1252/GBK）无法输出 ⚠/✓ 等符号：统一强制 UTF-8 输出
+for _stdio in (sys.stdout, sys.stderr):
+    try:
+        _stdio.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 CRED_PATH = os.path.expanduser("~/.arkbox/credentials.json")
 
 SKLAND_APP_CODE = "4ca99fa6b56cc2ba"   # 森空岛 App

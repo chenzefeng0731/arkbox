@@ -9,6 +9,13 @@ import sys
 from skland_core import ArkApiError, ensure_auth, load_creds, mask_uid
 from ark_archive import load as archive_load
 
+# Windows 终端默认编码（cp1252/GBK）无法输出 ⚠/✓ 等符号：统一强制 UTF-8 输出
+for _stdio in (sys.stdout, sys.stderr):
+    try:
+        _stdio.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 
 def main():
     print("ArkBox doctor")

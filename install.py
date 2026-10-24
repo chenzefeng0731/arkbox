@@ -13,6 +13,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Windows 终端默认编码（cp1252/GBK）无法输出 ⚠/✓ 等符号：统一强制 UTF-8 输出
+for _stdio in (sys.stdout, sys.stderr):
+    try:
+        _stdio.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 ROOT = Path(__file__).resolve().parent
 SOURCE = ROOT / "skill" / "arkbox"
 

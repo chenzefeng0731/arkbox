@@ -12,6 +12,7 @@
 """
 
 import os
+import sys
 import re
 import tempfile
 import unittest
@@ -26,6 +27,13 @@ from ark_site import build_site
 from ark_profile import build_tenure
 from skland_core import _qr_render, mask_uid
 from ark_poster import render_poster
+
+# Windows 终端默认编码（cp1252/GBK）无法输出 ⚠/✓ 等符号：统一强制 UTF-8 输出
+for _stdio in (sys.stdout, sys.stderr):
+    try:
+        _stdio.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 
 TEST_UID = "123456789"
