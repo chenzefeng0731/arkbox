@@ -528,15 +528,25 @@ def _qr_render(scan_id, out_path):
         return html_path
 
 
-def _try_print_qr(scan_id):
-    """优先打开二维码图片/页面；终端只打印路径和状态提示。"""
-    out = _qr_render(scan_id, os.path.expanduser("~/.arkbox/login_qr.png"))
-    print(f"登录二维码已生成: {out}")
+def _try_print_qr(scan_id, out_path=None):
+    """二维码优先 ASCII 直出终端/对话（对屏可扫）；PNG 仅作兜底。"""
+    try:
+        import qrcode
+        qr = qrcode.QRCode(border=1)
+        qr.add_data(f"hypergryph://scan_login?scanId={scan_id}")
+        qr.make(fit=True)
+        print("请用【森空岛 App】扫描下方二维码，并在手机上点「确认登录」：\n")
+        qr.print_ascii(invert=True)
+        print("\n（上方二维码若显示错乱无法扫描，请打开下方图片扫码）")
+    except Exception:
+        pass
+    out = _qr_render(scan_id, os.path.expanduser(out_path or "~/.arkbox/login_qr.png"))
+    print(f"二维码图片（备用）: {out}")
     try:
         webbrowser.open("file://" + os.path.abspath(out))
     except Exception:
         pass
-    return True
+    return out
 
 
 def cmd_login(args):
@@ -570,8 +580,8 @@ def cmd_login(args):
     finish_login(token)
 
 
-def finish_login(token, default_role_idx=0):
-    """扫码/验证码拿到 token 后的公共换证流程（非交互；多角色时取第一个官服）。"""
+def finish_login(token):
+    """扫码/验证码拿到 token 后的公共换证流程（非交互；多角色时取第一个官服角色）。"""
     print("登录成功，正在换取各接口凭证...")
     print("① 换取森空岛凭证（cred）...")
     skland = skland_cred_by_code(grant_skland_code(token))
@@ -581,13 +591,19 @@ def finish_login(token, default_role_idx=0):
     bindings = player_binding(skland["cred"], skland["token"])
     if not bindings:
         raise ArkApiError("该账号未绑定明日方舟角色")
-    if len(bindings) > 1:
-        print(f"检测到 {len(bindings)} 个角色，自动选择第一个：")
-        for i, b in enumerate(bindings):
-            print(f"  [{'*' if i == default_role_idx else ' '}] {b['nickName']} (UID {b['uid']}, {b.get('channelName') or ''})")
-        binding = bindings[default_role_idx]
-    else:
-        binding = bindings[0]
+    # 寻访记录走官网用户中心，仅官服渠道可查：必须选官服角色
+    official = [b for b in bindings if b.get("isOfficial")]
+    if not official:
+        channels = "、".join(sorted({b.get("channelName") or "未知渠道" for b in bindings}))
+        raise ArkApiError(
+            f"检测到角色（{channels}），但寻访记录仅国服官服渠道可查，"
+            "当前账号没有官服角色，无法使用本工具。"
+        )
+    if len(official) > 1:
+        print(f"检测到 {len(official)} 个官服角色，自动选择第一个：")
+        for b in official:
+            print(f"  - {b['nickName']} (UID {b['uid']})")
+    binding = official[0]
     uid = binding["uid"]
     print(f"④ 获取寻访查询凭证（角色 {binding.get('nickName')}）...")
     # 注意：u8_token_by_uid 要传 grant type=1 新发的官网通行证 token，不是原始扫码 token
@@ -612,10 +628,10 @@ def finish_login(token, default_role_idx=0):
 
 
 def cmd_login_scan(args):
-    """非交互扫码登录：生成二维码图片 → 轮询 → 全自动换证。供 Agent 直接调用。"""
-    qr_out = os.path.abspath(getattr(args, "qr_out", None) or "/tmp/ark_login_qr.png")
+    """非交互扫码登录：二维码直出终端 → 轮询 → 全自动换证。供 Agent 直接调用。"""
+    qr_out = getattr(args, "qr_out", None) or "/tmp/ark_login_qr.png"
     scan_id = login_start_scan()
-    qr_path = _qr_render(scan_id, qr_out)
+    qr_path = _try_print_qr(scan_id, qr_out)
     print(f"QR_SAVED: {qr_path}", flush=True)
     print("等待手机扫码确认（最长 115 秒）...", flush=True)
     token, state = None, "waiting"
@@ -645,13 +661,54 @@ def cmd_whoami(args):
         print(f"凭证状态: 失效（{e}）→ 请重新运行 login")
 
 
+def cmd_login_flags(argv):
+    """非交互登录：--qr 扫码 / --phone <手机号> [--code <验证码>] 两步短信。供 Agent 代跑。"""
+    phone = code = None
+    qr = False
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--qr":
+            qr = True
+        elif a == "--phone" and i + 1 < len(argv):
+            phone = argv[i + 1]
+            i += 1
+        elif a == "--code" and i + 1 < len(argv):
+            code = argv[i + 1]
+            i += 1
+        else:
+            print(f"未知参数: {a}")
+            sys.exit(1)
+        i += 1
+    if qr:
+        cmd_login_scan(type("_Args", (), {"qr_out": None})())
+    elif phone:
+        if code:
+            print("正在校验验证码并换取凭证...")
+            finish_login(login_by_phone_code(phone, code))
+        else:
+            login_send_phone_code(phone)
+            print(f"验证码已发送至 {phone}。")
+            print(f"收到短信后运行: skland_core.py login --phone {phone} --code <6位验证码>")
+    else:
+        print("用法: skland_core.py login --qr | login --phone <手机号> [--code <验证码>]")
+
+
 def main():
     if len(sys.argv) < 2:
-        print("用法: skland_core.py <login|login-scan [qr_path]|whoami|logout>")
+        print("用法: skland_core.py <login [flags]|login-scan [qr_path]|whoami|logout>")
+        print("  login                            交互式登录（用户在终端使用）")
+        print("  login --qr                       非交互扫码（Agent 代跑，二维码直出终端）")
+        print("  login --phone <手机号>            发送短信验证码")
+        print("  login --phone <手机号> --code <验证码>  校验并完成登录")
         sys.exit(1)
     cmd = sys.argv[1]
     if cmd == "login":
-        cmd_login(None)
+        rest = sys.argv[2:]
+        if rest:
+            cmd_login_flags(rest)
+        else:
+            cmd_login(None)
     elif cmd == "login-scan":
         class _A: qr_out = sys.argv[2] if len(sys.argv) > 2 else None
         cmd_login_scan(_A())

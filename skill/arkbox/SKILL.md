@@ -1,6 +1,6 @@
 ---
 name: arkbox
-description: 明日方舟抽卡分析与干员筛选工具箱（本地优先、跨平台）。通过森空岛 App 扫码授权，拉取官方可查寻访记录并本地归档：按卡池统计抽数/六星/垫刀/平均出货，生成带“双金还债”等称号的分享海报与响应式长报告，可发布固定站点（不含 UID），或按星级/职业/等级/潜能/时装筛选我的干员；也支持离线 JSON/JSONL 记录。当用户提到明日方舟、方舟、抽卡分析、寻访记录、垫刀、几抽出的、欧非、称号、分享海报、干员筛选、我的box、干员持有、森空岛账号数据时使用。纯标准库零依赖，凭证仅存本地 ~/.arkbox/。仅支持国服官服账号，B 服/国际服未验证。
+description: 明日方舟抽卡分析与干员筛选工具箱（本地优先、跨平台）。通过森空岛 App 扫码授权，拉取官方可查寻访记录并本地归档：按卡池统计抽数/六星/垫刀/平均出货，生成带“双金还债”等称号的分享海报与响应式长报告，可发布固定站点（不含 UID），或按星级/职业/等级/潜能/时装筛选我的干员；也支持离线 JSON/JSONL 记录。当用户提到明日方舟、方舟、抽卡分析、寻访记录、垫刀、几抽出的、欧非、称号、分享海报、干员筛选、我的box、干员持有、森空岛账号数据时使用。纯标准库零依赖，凭证仅存本地 ~/.arkbox/。仅支持国服官服账号（寻访记录仅官服渠道可查），B 服/国际服不可用。
 license: MIT
 compatibility: Python 3.9+；macOS/Windows/Linux；PNG 海报需本机 Chrome/Edge/Chromium（可选）；网络访问 Hypergryph/SKland/PRTS。
 metadata:
@@ -31,13 +31,14 @@ B 版海报已切到生产布局，A 版保留黄黑警示风格。
 ## 首次使用（必须先完成一次）
 
 1. 检查凭证是否存在：`~/.arkbox/credentials.json`
-2. 不存在时，让**用户自己在终端运行**（登录需要扫码/收验证码，是交互式的，agent 无法代跑）：
-
-   ```bash
-   python3 <skill目录>/scripts/skland_core.py login
-   ```
-
-   用户用**森空岛 App** 扫终端二维码（未装 qrcode 库时显示链接内容，可改用手机验证码方式），确认后凭证自动保存（权限 600）。建议安装 `pip3 install qrcode` 获得纯本地二维码。
+2. 不存在时，**Agent 直接代跑非交互登录**，在对话内完成（用户无需碰终端）：
+   - 首选扫码：`python3 <skill目录>/scripts/skland_core.py login-scan`（阻塞约 115 秒轮询）。
+     stdout 会**直出 ASCII 二维码**——把输出原样展示给用户，让用户用森空岛 App 对屏扫码并在手机点「确认登录」；
+     `QR_SAVED:` 行是 PNG 兜底路径，ASCII 显示错乱时让用户点开该图片扫码。
+   - 备选验证码：`skland_core.py login --phone <用户手机号>` 发送短信 → 用户回复 6 位验证码后
+     `skland_core.py login --phone <手机号> --code <验证码>` 完成登录。
+   - 仅支持国服官服账号：无官服角色时 login 会明确报错，如实转告用户。
+   - 交互式 `login`（无参数）仅供用户自己在终端使用，Agent 不要代跑（会卡在输入等待）。
 3. 可用 `python3 scripts/skland_core.py whoami` 验证凭证状态。
 4. 登出：`python3 scripts/skland_core.py logout` 删除本地凭证（彻底解除授权需在森空岛 App 授权管理里操作）。
 

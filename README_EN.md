@@ -17,9 +17,9 @@ roster by class / rarity / level / potential / skin and renders a gallery page.
   <img src="docs/demo-gallery.png" alt="operator gallery" width="86%">
 </p>
 
-Unofficial fan tool, not affiliated with or endorsed by Hypergryph. **CN official (Bilibili-free)
-servers only** — B-server / international servers are unverified. Code is MIT; game data and
-assets remain the property of their original owners.
+Unofficial fan tool, not affiliated with or endorsed by Hypergryph. **CN official servers only** —
+pull records live in Hypergryph's web user center (official channel); B-server / international
+roles cannot be used. Code is MIT; game data and assets remain the property of their original owners.
 
 ## 30-second preview (no login needed)
 
@@ -188,7 +188,8 @@ docs/PUBLISHING.md    privacy / verification checklist before publishing
 - **Will I get banned?** ArkBox only reads officially queryable endpoints, at low frequency, without
   touching the game client; credentials stay local (permission 600) and are never uploaded. Still,
   this is an unofficial tool and zero risk cannot be promised — don't use it if that worries you.
-- **B-server / international servers?** Only CN official servers are verified; others are unsupported.
+- **B-server / international servers?** Not supported. Pull records only exist in Hypergryph's web
+  user center (official CN channel); SKland can list B-server operators, but gacha analysis is impossible.
 - **Why are my records incomplete?** SKland only returns the officially queryable window — not a bug.
   Reports say "within this archive" by default.
 - **Why does my average differ from others?** Stats are per-banner and never merged across banners;
