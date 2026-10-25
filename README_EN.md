@@ -1,5 +1,7 @@
 # ArkBox · Arknights Gacha Archive
 
+[![CI](https://github.com/chenzefeng0731/arkbox/actions/workflows/test.yml/badge.svg)](https://github.com/chenzefeng0731/arkbox/actions/workflows/test.yml)
+
 English | [中文](README.md)
 
 A local-first gacha analyzer for *Arknights*: authorize once through the SKland app, read your
@@ -7,10 +9,29 @@ officially queryable pull records, and generate a shareable **poster** plus a re
 report (with your Doctor's tenure in the header). A separate "My Operators" command filters your
 roster by class / rarity / level / potential / skin and renders a gallery page.
 
-![demo poster](docs/demo-poster.png)
+<p align="center">
+  <img src="docs/demo-poster.png" alt="gacha poster" width="42%">
+  <img src="docs/demo-report.png" alt="long-form gacha report" width="42%">
+</p>
+<p align="center">
+  <img src="docs/demo-gallery.png" alt="operator gallery" width="86%">
+</p>
 
-Unofficial fan tool, not affiliated with or endorsed by Hypergryph. Code is MIT; game data and
+Unofficial fan tool, not affiliated with or endorsed by Hypergryph. **CN official (Bilibili-free)
+servers only** — B-server / international servers are unverified. Code is MIT; game data and
 assets remain the property of their original owners.
+
+## 30-second preview (no login needed)
+
+```bash
+git clone https://github.com/chenzefeng0731/arkbox.git arkbox
+cd arkbox
+# On Windows, replace python3 with python
+python3 skill/arkbox/scripts/ark_gacha.py analyze \
+  --records fixtures/demo-records.jsonl --nick "Demo Doctor" --poster --html
+```
+
+Once it runs, continue below for installation and login; or keep reading for dependencies and privacy.
 
 ## Before you start: what you need
 
@@ -90,10 +111,6 @@ are not affected.
 ## Common commands
 
 ```bash
-# Preview with synthetic demo data (no login needed)
-python3 skill/arkbox/scripts/ark_gacha.py analyze \
-  --records fixtures/demo-records.jsonl --nick "Demo Doctor" --poster --html
-
 # Poster + long HTML (the minimal universal deliverable)
 python3 skill/arkbox/scripts/ark_gacha.py analyze --poster --html
 
@@ -165,6 +182,25 @@ LICENSE                MIT (code only)
 THIRD_PARTY_NOTICES.md game data / avatars / third-party components
 docs/PUBLISHING.md    privacy / verification checklist before publishing
 ```
+
+## FAQ
+
+- **Will I get banned?** ArkBox only reads officially queryable endpoints, at low frequency, without
+  touching the game client; credentials stay local (permission 600) and are never uploaded. Still,
+  this is an unofficial tool and zero risk cannot be promised — don't use it if that worries you.
+- **B-server / international servers?** Only CN official servers are verified; others are unsupported.
+- **Why are my records incomplete?** SKland only returns the officially queryable window — not a bug.
+  Reports say "within this archive" by default.
+- **Why does my average differ from others?** Stats are per-banner and never merged across banners;
+  the four metrics (in-pool average / overall efficiency / current pity / longest gap) are separate.
+- **No server-wide ranking?** A local tool has no server-wide data; "theoretical position" compares
+  you against theoretical samples of the same segment — it is not a ranking.
+- **Where are credentials stored? How to delete?** `~/.arkbox/credentials.json` (permission 600).
+  Run `skland_core.py logout`; revoke fully in the SKland app's authorization management.
+- **Windows?** Replace `python3` with `python` or `py -3`; PNG needs local Chrome / Edge / Chromium,
+  otherwise you still get HTML.
+- **Commercial use / redistribution?** Code is MIT. Game names, avatars and data belong to Hypergryph
+  and other original owners; this project is unofficial and non-commercial.
 
 ## Known limits
 

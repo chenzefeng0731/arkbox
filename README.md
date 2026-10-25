@@ -1,14 +1,35 @@
 # ArkBox · 明日方舟寻访档案
 
+[![CI](https://github.com/chenzefeng0731/arkbox/actions/workflows/test.yml/badge.svg)](https://github.com/chenzefeng0731/arkbox/actions/workflows/test.yml)
+
 中文 | [English](README_EN.md)
 
 一个本地优先的《明日方舟》抽卡分析工具：通过森空岛 App 授权，读取官方可查寻访记录，生成
 **抽卡海报**与响应式长报告（页头带入职天数）；另有「我的干员」独立命令，可按职业/星级/等级/潜能/时装
 筛选自己的干员并生成图鉴页。
 
-![demo poster](docs/demo-poster.png)
+<p align="center">
+  <img src="docs/demo-poster.png" alt="抽卡海报" width="42%">
+  <img src="docs/demo-report.png" alt="抽卡分析长报告" width="42%">
+</p>
+<p align="center">
+  <img src="docs/demo-gallery.png" alt="干员图鉴" width="86%">
+</p>
 
-非官方玩家工具，与鹰角网络无隶属或授权关系。代码 MIT，游戏数据与素材版权归原权利方。
+非官方玩家工具，与鹰角网络无隶属或授权关系；**仅支持国服官服账号**（B 服 / 国际服未验证）。
+代码 MIT，游戏数据与素材版权归原权利方。
+
+## 30 秒看效果（无需登录）
+
+```bash
+git clone https://github.com/chenzefeng0731/arkbox.git arkbox
+cd arkbox
+# Windows 用户请把 python3 换成 python
+python3 skill/arkbox/scripts/ark_gacha.py analyze \
+  --records fixtures/demo-records.jsonl --nick 演示博士 --poster --html
+```
+
+跑通了再往下看安装与登录；只想了解依赖和隐私，继续读即可。
 
 ## 开始之前：你需要什么
 
@@ -82,10 +103,6 @@ python3 skill/arkbox/scripts/ark_doctor.py
 ## 常用命令
 
 ```bash
-# 先看效果（无需登录，使用合成 demo 数据）
-python3 skill/arkbox/scripts/ark_gacha.py analyze \
-  --records fixtures/demo-records.jsonl --nick 演示博士 --poster --html
-
 # 抽卡海报 + 长 HTML（最精简的通用交付）
 python3 skill/arkbox/scripts/ark_gacha.py analyze --poster --html
 
@@ -144,6 +161,17 @@ LICENSE                MIT（仅代码）
 THIRD_PARTY_NOTICES.md 游戏数据/头像/第三方组件说明
 docs/PUBLISHING.md    上架 GitHub 前的隐私/验证清单
 ```
+
+## 常见问题
+
+- **会不会封号 / 盗号？** 只读官方可查接口、低频请求、不修改游戏客户端；凭证只存本地（权限 600）不上传。但这是非官方工具，无法承诺零风险，介意请勿使用。
+- **支持 B 服 / 国际服吗？** 目前仅验证国服官服；B 服 / 国际服未验证，暂不支持。
+- **为什么我的记录不全 / 只有几个月？** 森空岛只返回官方可查窗口内的记录，不是工具漏了；报告默认写“本档案区间”。
+- **为什么我的平均抽数和别人不一样？** 统计按卡池独立、不跨池累计，四项指标（池内均值 / 整体效率 / 当前垫 / 最长间隔）分开；跨池拉平会失真。
+- **为什么没有全服排名？** 本地工具拿不到全服数据；“理论位置”是与同段抽数理论样本的比较，不是排名。
+- **凭证存在哪？怎么删？** `~/.arkbox/credentials.json`（权限 600）。运行 `skland_core.py logout` 可删除本地凭证；彻底解除授权请在森空岛 App 的授权管理里操作。
+- **Windows 怎么用？** 命令里 `python3` 换成 `python` 或 `py -3`；生成 PNG 需要本机 Chrome / Edge / Chromium，没有时仍会生成 HTML。
+- **可以商用 / 二次分发吗？** 代码 MIT 可自由使用；游戏名称、头像、数据版权归鹰角网络等原权利方，本项目非官方、非商业。
 
 ## 已知边界
 
