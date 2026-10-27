@@ -28,9 +28,13 @@ git clone https://github.com/chenzefeng0731/arkbox.git arkbox
 cd arkbox
 # Windows 用户请把 python3 换成 python
 python3 skill/arkbox/scripts/ark_gacha.py analyze \
-  --records fixtures/demo-records.jsonl --nick 演示博士 --poster --html
+  --records fixtures/demo-records.jsonl --nick 演示博士 --tenure 2024-07-14 \
+  --poster --html
 ```
 
+这条命令用合成演示数据跑通完整分析，产出**抽卡海报 PNG + 单页档案报告**。注意：
+未登录时没有干员持有数据，档案页是单页形态；扫码登录后重跑同一命令，档案页会升级为
+「寻访分析 + 泰拉图鉴」双页签并支持导出分享图——即上方三张展示图的完整效果。
 跑通了再往下看安装与登录；只想了解依赖和隐私，继续读即可。
 
 ## 三个支柱
@@ -161,6 +165,17 @@ python3 tests/e2e_check.py
 
 单元自测覆盖抽卡模型、按池独立口径、零金、标题、隐私、站点、入职天数等边界；
 端到端冒烟走真实 CLI。CI 在 macOS/Windows/Linux × Python 3.9/3.12 上每次提交自动跑全部测试。
+
+## 复刻 README 演示图
+
+`docs/` 四张演示图（海报 / 寻访分析 / 泰拉图鉴 / 分享弹层）由仓库自带工具生成，
+数据为合成演示记录 + 确定性合成的演示 box（不对应任何真实账号）：
+
+```bash
+python3 tools/make_demo_images.py
+```
+
+需要本机 Chrome/Edge 与公网（首次运行下载干员元数据约 10MB，之后走本地缓存）。
 
 ## 目录
 

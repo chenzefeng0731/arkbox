@@ -629,7 +629,9 @@ def finish_login(token):
 
 def cmd_login_scan(args):
     """非交互扫码登录：二维码直出终端 → 轮询 → 全自动换证。供 Agent 直接调用。"""
-    qr_out = getattr(args, "qr_out", None) or "/tmp/ark_login_qr.png"
+    import tempfile
+    qr_out = getattr(args, "qr_out", None) or os.path.join(
+        tempfile.gettempdir(), "ark_login_qr.png")
     scan_id = login_start_scan()
     qr_path = _try_print_qr(scan_id, qr_out)
     print(f"QR_SAVED: {qr_path}", flush=True)
