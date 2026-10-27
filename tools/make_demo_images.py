@@ -39,13 +39,11 @@ NICK = "演示博士"
 TENURE = "2024-07-14"  # 页头「入职 · N 天」演示日期
 DOCS = ROOT / "docs"
 
-# 每张截图的视口（CSS 像素；物理像素 ×2）。高度按页签内容取：
-# 寻访分析长报告取首屏信息密度最高的上半段；泰拉图鉴要装下地图 + 地区面板；
-# 分享弹层是固定遮罩，取遮罩整屏。
+# 每张截图的视口（CSS 像素；物理像素 ×2）。寻访分析与泰拉图鉴保持同高，
+# README 里两张并排放才不会参差；分享弹层预览的就是海报本身，不再单独出图。
 SHOTS = {
     "demo-archive.png": ("#gacha", 1440, 1560),
-    "demo-terra.png": ("#terra", 1440, 1860),
-    "demo-share.png": ("#share-modal", 1440, 1100),
+    "demo-terra.png": ("#terra", 1440, 1560),
 }
 
 
@@ -148,13 +146,7 @@ def main():
             poster_b64=posters.get("gacha"), poster_terra_b64=posters.get("terra"))
 
         for name, (frag, w, hgt) in SHOTS.items():
-            js = ""
-            if frag == "#share-modal":  # 特殊标记：自动点分享按钮，截弹层
-                js = ("window.addEventListener('load',function(){"
-                      "setTimeout(function(){var b=document.getElementById('fab-share');"
-                      "if(b)b.click();},500);});")
-                frag = ""
-            shot(browser, html, str(DOCS / name), w, hgt, frag=frag, extra_js=js)
+            shot(browser, html, str(DOCS / name), w, hgt, frag=frag)
             print(f"✓ docs/{name}", file=sys.stderr)
     finally:
         shutil.rmtree(work, ignore_errors=True)
