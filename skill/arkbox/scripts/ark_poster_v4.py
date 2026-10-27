@@ -58,7 +58,7 @@ def _tag(text, cls=""):
     return f'<span class="tag {cls}">{html.escape(text)}</span>'
 
 
-def _next_rate(pity):
+def _next_rate(pity):  # 保留供其他模板兼容；v4 标签已按 §22 A-7 改为静态口径
     if pity >= 99:
         return 100
     if pity < 50:
@@ -84,8 +84,6 @@ def _op(s, cls="", dup=0):
     badge = ""
     if is_up is False:
         badge = '<span class="badge">歪</span>'
-    elif dup > 1:
-        badge = f'<span class="dup">×{dup}</span>'
     mark = "UP" if is_up is True else ("歪" if is_up is False else "待核")
     return f'''<div class="op {cls}">
       <img src="{AVATAR_URL.format(cid=html.escape(s['char_id'] or ''))}" alt="" onerror="{AVATAR_ONERROR}">
@@ -151,7 +149,7 @@ def _timeline(p):
 def _pitybar(pity, next_rate=None, label=True, cls=""):
     pct = min(pity / 99 * 100, 100)
     rate = _next_rate(pity) if next_rate is None else next_rate
-    lab = f'<span class="pity-lab">六星垫 {pity}/99 · 下抽六星率 {rate:g}%</span>' if label else ""
+    lab = '<span class="pity-lab">基础 2% · 50 抽后递增</span>' if label else ""
     return f'<div class="pitybar {cls}"><div class="pity-track"><i style="width:{pct:.2f}%"></i></div>{lab}</div>'
 
 
@@ -163,10 +161,10 @@ def _featured(p):
     up_txt = p.get("up_label") or (f'UP {uv.get("hit_count", 0)}/{uv.get("total", 0)}' if uv.get("known") else "UP 待核")
     up_cls = "ok" if uv.get("known") and uv.get("hit_count") == uv.get("total") else "mid"
     type_cls = {"limited": "lim", "linkage": "mid", "special": "mid"}.get(p.get("pool_type"), "std")
-    gold = f"{CN.get(n, n)}金" if n >= 2 else f"{n} 六星"
+    gold = f"{CN.get(n, n)}金" if n >= 2 else f"{n} 名六星"
     detail = " · ".join(f'第{e["at_pull"]}抽 {e["name"]}' for e in events[:3])
     if n > 3:
-        detail += f" 等 {n} 位"
+        detail += f" 等 {n} 名"
 
     if n <= 3:
         ops = "".join(_op(e, "feat", dup_counts.get(e["char_id"], 0)) for e in events)
@@ -191,8 +189,8 @@ def _featured(p):
         <div class="feat-title"><span class="feat-name">{html.escape(p["pool"])}</span>
           <span class="ptag {type_cls}">{html.escape(p.get("pool_type_label") or "池型待核")}</span>
           <span class="ptag {up_cls}">{html.escape(up_txt)}</span>
-          <span class="feat-new">记录最近</span></div>
-        <div class="feat-nums"><b>{p["total"]}</b> 抽 <b>{p["six_count"]}</b> 六星</div>
+          <span class="feat-new">最近记录</span></div>
+        <div class="feat-nums"><b>{p["total"]}</b> 抽 <b>{p["six_count"]}</b> 名六星</div>
       </div>
       <div class="feat-date">{date_txt} · 均值 {p["avg_gap"] or "—"} · 最长 {p["worst_gap"] or "—"}</div>
       <div class="feat-body">
@@ -209,7 +207,7 @@ def _featured(p):
     </div>'''
 
 
-def _compact(p):
+def _compact(p, closed=False):
     events = _events(p)
     uv = p.get("up_verdict") or {"known": False}
     dup_counts = Counter(e["char_id"] for e in events)
@@ -222,7 +220,8 @@ def _compact(p):
     elif "才出" in story:
         story_cls = "red"
     spark = p.get("spark")
-    spark_txt = f' · 井 {spark["pulls"]}/{spark["threshold"]}' if spark else ""
+    spark_txt = (f' · 井 {spark["pulls"]}/{spark["threshold"]}'
+                 + ('（关池未兑换即失效）' if closed else '')) if spark else ""
 
     hero = max(events, key=lambda s: (bool(s.get("is_up")), dup_counts.get(s["char_id"], 0), -s["at_pull"])) if events else None
     others = [s for s in events if s is not hero][:2]
@@ -231,12 +230,12 @@ def _compact(p):
         ops += _op(hero, "comp", dup_counts.get(hero["char_id"], 0))
     ops += "".join(_op(s, "tiny") for s in others)
 
-    return f'''<div class="compact">
+    return f'''<div class="compact{' ended' if closed else ''}">
       <div class="c-left">
         <div class="c-head"><span class="c-name">{html.escape(p["pool"])}</span>
           <span class="ptag {type_cls}">{html.escape(p.get("pool_type_label") or "池型待核")}</span>
-          <span class="ptag mid">{html.escape(up_txt)}</span></div>
-        <div class="c-meta">{p["total"]} 抽 · {p["six_count"]} 六星 · 均值 {p["avg_gap"] or "—"} · 六星垫 {p.get("display_pity", p.get("current_pity", p.get("since_last_six", 0)))}/99{spark_txt}</div>
+          <span class="ptag mid">{html.escape(up_txt)}</span>{'<span class="ptag plain">已关池</span>' if closed else ''}</div>
+        <div class="c-meta">{p["total"]} 抽 · {p["six_count"]} 名六星 · 均值 {p["avg_gap"] or "—"} · 六星垫 {p.get("display_pity", p.get("current_pity", p.get("since_last_six", 0)))}/99{' · 池已结束 · 垫抽不继承' if closed else ''}{spark_txt}</div>
         <div class="c-story {story_cls}">{html.escape(story)}</div>
         {_pitybar(p.get("display_pity", p.get("current_pity", p.get("since_last_six", 0))), p.get("next_rate"), label=False, cls="small")}
       </div>
@@ -244,19 +243,23 @@ def _compact(p):
     </div>'''
 
 
+_GOLD_CN = {2: "双", 3: "三", 4: "四", 5: "五", 6: "六"}
+
+
 def _title_tags(report):
+    """副签直接从事件数据生成，不依赖主称号 kind（主称号固定为评级）。"""
     tags = []
-    kind = report["title"].get("kind")
-    label = report["title"]["label"]
-    if kind and kind.startswith("ten_pull"):
-        tags.append((label.split("还债")[0] if "还债" in label else label, "gold"))
-    if kind == "ten_pull_debt":
-        tags.append(("还债", "black"))
-    if report["metrics"].get("max_duplicate", 0) >= 3:
-        d = report["metrics"]["duplicates"][0]
+    m = report["metrics"]
+    best = report.get("best_ten")
+    if best and best.get("six_count", 0) >= 2:
+        tags.append((_GOLD_CN.get(best["six_count"], str(best["six_count"])) + "金", "gold"))
+        if (m.get("max_gap") or 0) >= 50:
+            tags.append((f'{m["max_gap"]} 抽才出', "black"))
+    if m.get("max_duplicate", 0) >= 3:
+        d = m["duplicates"][0]
         tags.append((f"三顾茅庐 · {d['name']}×{d['count']}", "blue"))
-    if report["metrics"].get("up_total"):
-        tags.append((f"UP 命中 {report['metrics']['up_hits']}/{report['metrics']['up_total']}", "blue"))
+    if m.get("up_total"):
+        tags.append((f'UP 命中 {m["up_hits"]}/{m["up_total"]}', "blue"))
     return "".join(_tag(t, c) for t, c in tags[:4])
 
 
@@ -309,20 +312,22 @@ def render_poster_v4(report, stats, out_path):
     caption = t.get("caption") or "暂无寻访记录"
 
     stats_html = (
-        _stat(m["mean_gap"] if m["mean_gap"] is not None else "—", "池内均值 / 六星",
-              f'{m["gap_count"]} 段 · 按池独立 · 首段可能承接档案外垫抽', "gold")
+        _stat(m["mean_gap"] if m["mean_gap"] is not None else "—", "六星均值（抽）",
+              f'{m["gap_count"]} 段间隔 · 按池独立 · 不含末尾垫抽', "gold")
         + _stat(f'{luck["better_than"]}%' if luck["better_than"] is not None else "—",
-                "理论位置", "同段数理论样本 · 非全服排名", "blue")
+                "同段样本排名",
+                f'优于 {luck["better_than"]}% 同抽数样本' if luck["better_than"] is not None else "同抽数理论样本", "blue")
         + _stat(totals["six"], "六星干员", f'{totals["pulls"]} 抽 · {totals["pools"]} 池')
         + _stat(f'{up_hits}/{up_total}' if up_total else "待核", "UP 命中",
                 f'{up_rate}% · 只算已核验六星' if up_rate is not None else "UP 数据不可用")
     )
-    comp_html = "".join(_compact(p) for p in others)
+    comp_html = "".join(_compact(p, closed=True) for p in others)
     extra_line = f'<div class="extra">还有 {extra} 池未展开 · 详见长 HTML</div>' if extra else ""
 
     page = f'''<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8"><style>{CSS}</style></head>
 <body>
 <div class="grid"></div><div class="hazard"></div>
+<style>/* N-34：收紧 12px，避免 footer 贴底 */ .wrap{{padding-top:24px}}.title-zone{{margin-top:6px}}.section{{margin:11px 0 6px}}</style>
 <div class="wrap">
   <div class="header">
     <div class="header-left">
@@ -343,7 +348,7 @@ def render_poster_v4(report, stats, out_path):
 
   {_section("01", "抽卡总结")}
   <div class="stats">{stats_html}</div>
-  <div class="overall">整体 {m.get("overall_efficiency") if m.get("overall_efficiency") is not None else "—"} 抽/六星（含未结算 {m["current_pity_total"]} 抽，各池合计） · 期望 {luck["expected_gap"]} 抽/六星 · 非全服排名</div>
+  <div class="overall">整体 {m.get("overall_efficiency") if m.get("overall_efficiency") is not None else "—"} 抽/六星（含当前垫抽） · 期望 {luck["expected_gap"]} 抽/六星</div>
 
   {_section("02", "最近记录卡池", f'记录截至 {report["coverage"].get("latest") or ""}')}
   {_featured(featured) if featured else ''}
@@ -351,7 +356,7 @@ def render_poster_v4(report, stats, out_path):
   {_section("03", "更早记录", "按最近寻访排序")}
   {comp_html}
   {extra_line}
-  <div class="pity-note">六星垫抽按池独立；不跨池合并。99 抽为六星硬保底，不代表 UP 保底；兑换井为档案内估算；每池首段自档案首条记录起算，可能承接档案外垫抽。</div>
+  <div class="pity-note">六星垫抽按池独立；不跨池合并。六星硬保底 99 抽，不代表 UP 保底；兑换井为档案内估算；每池首段自档案首条记录起算，可能承接档案外垫抽。</div>
 
   <div class="banner">
     <div class="bcell"><span class="banner-k">最欧</span>
@@ -366,7 +371,7 @@ def render_poster_v4(report, stats, out_path):
   </div>
 
   <div class="footer">
-    <div class="foot-line">本次记录 {html.escape(report["coverage"].get("earliest") or "")} ~ {html.escape(report["coverage"].get("latest") or "")} · 仅部分历史（完整性未知） · 99 抽为六星硬保底 · 非全服排名 · 非官方玩家工具 · 数据本地 / 头像公开 CDN</div>
+    <div class="foot-line">本次记录 {html.escape(report["coverage"].get("earliest") or "")} ~ {html.escape(report["coverage"].get("latest") or "")} · 仅部分历史（完整性未知） · 六星硬保底 99 抽 · 非官方玩家工具 · 数据本地 / 头像公开 CDN</div>
     <div class="foot-row">
       <div class="tri"><svg width="24" height="28" viewBox="0 0 30 34"><path d="M15 1 L29 10 V24 L15 33 L1 24 V10 Z" fill="none" stroke="{INK}" stroke-width="2"/><path d="M15 8 L22 12.5 V21 L15 25.5 L8 21 V12.5 Z" fill="none" stroke="{INK}" stroke-width="1.4"/></svg><span>RHODES ISLAND</span></div>
       {_barcode(report["privacy"]["barcode_seed"])}
@@ -496,6 +501,8 @@ h1 b{color:#0098DC}
 .ptag.std{background:rgba(21,23,24,.06);color:rgba(21,23,24,.55);border-color:rgba(21,23,24,.18)}
 .extra{font:600 13px 'SF Mono',Menlo;color:rgba(21,23,24,.45);margin:3px 0 1px}
 .pity-note{font:500 12px 'SF Mono',Menlo;color:rgba(21,23,24,.42);margin:2px 0 1px}
+.compact.ended .c-meta,.compact.ended .c-story{opacity:.85}
+.compact.ended .pitybar{opacity:.45}
 .banner{background:#0098DC;color:#fff;display:flex;align-items:stretch;padding:8px 0;clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);margin-top:6px}
 .bcell{flex:1;min-width:0;padding:0 14px;display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
 .bcell+.bcell{border-left:1px solid rgba(255,255,255,.38)}

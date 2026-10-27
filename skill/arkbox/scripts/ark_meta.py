@@ -24,7 +24,8 @@ META_URLS = [
 ]
 CACHE_PATH = os.path.expanduser("~/.arkbox/cache/operator_meta.json")
 # 解析逻辑或上游结构变化时递增，旧缓存自动失效重下
-CACHE_VERSION = 1
+# v2: 增加 nation/group/team/display_number（泰拉图鉴地区归属用）
+CACHE_VERSION = 2
 
 PROFESSION_ZH = {
     "PIONEER": "先锋", "WARRIOR": "近卫", "TANK": "重装", "SNIPER": "狙击",
@@ -62,6 +63,11 @@ def build_meta(raw_table):
             "rarity": rarity,  # 统一 1-6 星口径
             "profession": PROFESSION_ZH.get(profession, profession),
             "sub": e.get("subProfessionId", ""),
+            # 地区/阵营归属（泰拉图鉴用）：nationId=所属编制，空时按 group/team 推
+            "nation": e.get("nationId") or "",
+            "group": e.get("groupId") or "",
+            "team": e.get("teamId") or "",
+            "dn": e.get("displayNumber") or "",
         }
     return meta
 

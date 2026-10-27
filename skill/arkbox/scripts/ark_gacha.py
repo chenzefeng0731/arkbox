@@ -304,10 +304,13 @@ def render_markdown(report, stats, detail=False, limit=None, with_audit=False):
 
 # ---------------------------------------------------------------- HTML
 
-def render_html(report, stats, out_path, limit=None, site_mode=False):
-    """响应式长 HTML：与海报共用档案视觉和同一份 report。"""
-    from ark_report_html import render_html as _render
-    return _render(report, out_path, limit=limit, site_mode=site_mode)
+def render_html(report, stats, out_path, limit=None, site_mode=False, chars=None,
+                profile=None, poster_b64=None, poster_terra_b64=None):
+    """全能档案页（v1.0）：有 chars → 两页签（寻访/泰拉）+ 分享弹层；无 → 单页报告。"""
+    from ark_archive_html import build_archive_html
+    return build_archive_html(report, chars, out_path, site_mode=site_mode, limit=limit,
+                              profile=profile, poster_b64=poster_b64,
+                              poster_terra_b64=poster_terra_b64)
 
 
 # ---------------------------------------------------------------- Poster
@@ -385,6 +388,61 @@ def export_poster_png(report, html_path, theme="B", keep_source=False):
     return html_path, None
 
 
+def _render_share_posters(report, chars, out_dir, ts):
+    """--html 时顺手把两张分享海报渲染成 PNG（Chrome headless）并读回 base64。
+
+    寻访走 ark_poster_v4；泰拉走 ark_poster_terra（同一设计体系）。
+    渲染失败不阻断档案页：对应页签退回页面内 canvas 兜底或提示。
+    """
+    import base64
+    posters = {}
+    tmp = os.path.join(out_dir, f"_share_gacha_{ts}.html")
+    try:
+        from ark_poster_v4 import render_poster_v4
+        render_poster_v4(report, report["pools"]["all"], tmp)
+        png = _screenshot_html(tmp, tmp[:-5] + ".png", 1080, 1440)
+        if png:
+            with open(png, "rb") as f:
+                posters["gacha"] = base64.b64encode(f.read()).decode("ascii")
+            try:
+                os.remove(png)
+            except OSError:
+                pass
+    except Exception as e:
+        print(f"  ⚠ 寻访分享海报渲染失败（档案页仍可生成）: {e}", file=sys.stderr)
+    finally:
+        _drop_source(tmp, keep_source=False)
+
+    if chars:
+        tmp2 = os.path.join(out_dir, f"_share_terra_{ts}.html")
+        try:
+            from ark_archive_html import build_features
+            from ark_meta import load_meta
+            from ark_poster_terra import render_poster_terra
+            from ark_terra import build_terra
+            meta = load_meta()
+            owned = {c["char_id"] for c in chars}
+            nick = report.get("doctor", {}).get("nick") or "博士"
+            date_str = report.get("generated") or datetime.now().strftime("%Y.%m.%d")
+            terra = build_terra(meta, owned, nick=nick, date=date_str)
+            # 六维与页面雷达同口径：剔除 rar=0 占位（审计 D-01，359 口径）
+            feat = build_features([c for c in chars if (c.get("rarity") or 0) > 0], terra)
+            render_poster_terra(terra, feat, nick, date_str, tmp2, meta=meta)
+            png2 = _screenshot_html(tmp2, tmp2[:-5] + ".png", 1080, 1440)
+            if png2:
+                with open(png2, "rb") as f:
+                    posters["terra"] = base64.b64encode(f.read()).decode("ascii")
+                try:
+                    os.remove(png2)
+                except OSError:
+                    pass
+        except Exception as e:
+            print(f"  ⚠ 泰拉分享海报渲染失败（泰拉页签退回 canvas）: {e}", file=sys.stderr)
+        finally:
+            _drop_source(tmp2, keep_source=False)
+    return posters
+
+
 # ---------------------------------------------------------------- CLI
 
 RECORDS_URL_MAX_BYTES = 20 * 1024 * 1024  # 离线记录链接的下载上限
@@ -444,7 +502,7 @@ def _demo_tenure(date_str):
         return None
 
 
-def _finish_analysis(analyze_src, nick, cov, args):
+def _finish_analysis(analyze_src, nick, cov, args, chars=None, profile=None):
     pool_index = None
     if not getattr(args, "no_up", False):
         pool_index = PoolUpIndex()
@@ -479,10 +537,15 @@ def _finish_analysis(analyze_src, nick, cov, args):
     if args.audit and (args.poster or args.html):
         print(_audit_markdown(report))
         print()
+    # 产物落盘目录：默认 ~/.arkbox/reports（通用 skill 的可移植默认），
+    # 在项目里跑时用 --out-dir 指到项目内，免得产物躺进 Finder 看不见的隐藏目录。
+    out_dir = os.path.expanduser(getattr(args, "out_dir", None) or "~/.arkbox/reports")
+    if args.poster or args.html:
+        os.makedirs(out_dir, exist_ok=True)
     if args.poster:
         ts = time.strftime("%Y%m%d_%H%M")
         hpath, ppath = export_poster_png(
-            report, os.path.expanduser(f"~/.arkbox/reports/poster_{ts}.html"),
+            report, os.path.join(out_dir, f"poster_{ts}.html"),
             theme=args.theme, keep_source=getattr(args, "keep_poster_source", False))
         if ppath:
             print(f"海报已生成: {ppath}", file=sys.stderr)
@@ -492,13 +555,23 @@ def _finish_analysis(analyze_src, nick, cov, args):
             _open_path(hpath)
     if args.html:
         ts = time.strftime("%Y%m%d_%H%M")
-        path = render_html(report, stats, f"~/.arkbox/reports/gacha_{ts}.html", args.limit)
-        print(f"HTML 报告已生成: {path}", file=sys.stderr)
+        # 分享图统一走海报 HTML 模板管线（ark_poster_v4 / ark_poster_terra），
+        # 渲染成 PNG 嵌进档案页；无 Chrome 时不嵌入（泰拉侧由页面 canvas 兜底）。
+        posters = {}
+        if not getattr(args, "site", False):
+            posters = _render_share_posters(report, chars, out_dir, ts)
+        path = render_html(report, stats, os.path.join(out_dir, f"gacha_{ts}.html"),
+                           args.limit, chars=chars, profile=profile,
+                           poster_b64=posters.get("gacha"),
+                           poster_terra_b64=posters.get("terra"))
+        print(f"HTML 报告已生成: {path}"
+              + ("" if chars else "（未取到干员数据，仅寻访分析单页）"), file=sys.stderr)
         _open_path(path)
     if getattr(args, "site", False):
         from ark_site import build_site
         site_dir = args.site_dir or os.path.join(os.getcwd(), "site")
-        site = build_site(stats, pool_data, cov, site_dir, tenure=tenure)
+        site = build_site(stats, pool_data, cov, site_dir, tenure=tenure, chars=chars,
+                          profile=profile)
         print(f"站点已生成: {site['index']}", file=sys.stderr)
         print(f"站点元数据: {site['meta_path']}", file=sys.stderr)
         print(f"发布请求: {site['publish_path']}", file=sys.stderr)
@@ -523,6 +596,8 @@ def main():
     pa.add_argument("--keep-poster-source", action="store_true", help="保留海报源 HTML；默认只交付 PNG")
     pa.add_argument("--site", action="store_true", help="生成可发布的公开站点目录（隐藏昵称/UID，noindex）")
     pa.add_argument("--site-dir", default=None, help="站点目录，默认当前工作目录/site")
+    pa.add_argument("--out-dir", default=None,
+                    help="HTML 报告与海报的输出目录，默认 ~/.arkbox/reports（在项目里跑时建议显式指到项目内，免得产物落在隐藏目录）")
     pa.add_argument("--theme", choices=("A", "B"), default="B", help="海报主题，默认 B")
     pa.add_argument("--no-up", action="store_true", help="跳过 UP/池型判断")
     pa.add_argument("--json", action="store_true", help="输出 JSON")
@@ -530,6 +605,7 @@ def main():
     pa.add_argument("--hide-nick", action="store_true", help="隐藏昵称（分享产物默认不含 UID）")
     pa.add_argument("--quiet", action="store_true")
     pa.add_argument("--records", help="离线分析本地 JSON/JSONL 或公开 JSON 链接，跳过扫码与归档；rarity 口径与官方一致（0-indexed，六星=5）")
+    pa.add_argument("--no-box", action="store_true", help="跳过干员持有数据（档案页不含图鉴/泰拉/分享页签）")
     pa.add_argument("--nick", help="离线模式昵称，默认 博士")
     pa.add_argument("--tenure", help="离线模式演示入职日期 YYYY-MM-DD，用于页头完整展示；不传则隐藏入职段")
 
@@ -571,6 +647,15 @@ def main():
             cates = [c for c in cates if args.pool in (c.get("name") or "")]
 
         all_records, failed_pools, truncated_pools = [], [], []
+        # 干员持有（图鉴/泰拉页签用）：失败不阻断寻访分析
+        chars, profile = None, None
+        if not getattr(args, "no_box", False):
+            try:
+                from ark_box import extract_profile, fetch_chars
+                chars, pdata = fetch_chars(creds, uid)
+                profile = extract_profile(pdata, chars)
+            except Exception as e:
+                print(f"（干员数据不可用，档案页仅含寻访分析：{e}）", file=sys.stderr)
         for c in cates:
             if not args.quiet:
                 print(f"拉取卡池目录「{c['name']}」...", file=sys.stderr)
@@ -620,7 +705,7 @@ def main():
                     print("该账号没有寻访记录")
                 return
 
-        _finish_analysis(analyze_src, nick, cov, args)
+        _finish_analysis(analyze_src, nick, cov, args, chars=chars, profile=profile)
     except ArkApiError as e:
         print(f"错误: {e}", file=sys.stderr)
         if "失效" in str(e) or "cookie" in str(e).lower() or "token" in str(e).lower():

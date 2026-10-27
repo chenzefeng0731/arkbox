@@ -6,7 +6,7 @@
 - 99 抽硬保底模型与 95.3% 口径
 - 限定/联动/标准池型判定（单 UP 不再推断成限定）
 - 294/10/23.4/29.4/60/41/17/2 口径
-- 双金还债称号、UP 7/10、十连双金、重复六星
+- 欧皇评级主称号（事件降为 caption/候选/副签）、UP 7/10、十连双金、重复六星
 - UID 默认遮挡与三种隐私模式
 - 三形态不泄露完整 UID
 """
@@ -191,10 +191,10 @@ class P0Test(unittest.TestCase):
         self.assertEqual(len(self.report["pool_stats"]), 3)
         self.assertEqual(m["up_hits"], 7)
         self.assertEqual(m["up_total"], 10)
-        self.assertEqual(self.report["title"]["label"], "双金还债")
+        self.assertEqual(self.report["title"]["label"], "欧皇")
         self.assertIn("海渊巡游", self.report["title"]["caption"])
         self.assertEqual(self.report["pools"]["other_line"],
-                         "重点 2 / 共 3 池 · 另有 1 池 10 抽 2 六星（海渊巡游，未展开）")
+                         "重点 2 / 共 3 池 · 另有 1 池 10 抽 2 名六星（海渊巡游，未展开）")
         self.assertEqual(self.report["verification"], [])
         self.assertEqual(verify_report(self.report), [])
 
@@ -240,10 +240,10 @@ class P0Test(unittest.TestCase):
 
     def test_p1p2_model(self):
         labels = [x["label"] for x in self.report["title_candidates"]]
-        self.assertEqual(labels[0], "双金还债")
+        self.assertEqual(labels[0], "欧皇")
+        self.assertIn("双金，但 60 抽才出", labels)
         self.assertIn("三顾茅庐", labels)
         self.assertIn("保底人", labels)
-        self.assertIn("小欧", labels)
         types = {t["label"]: t for t in self.report["pool_types"]}
         self.assertEqual(types["限定"]["pulls"], 201)
         self.assertEqual(types["联动"]["mean_gap"], 33.0)
@@ -252,7 +252,7 @@ class P0Test(unittest.TestCase):
         self.assertEqual(sparks["车辙与风的归所"]["remaining"], 99)
         self.assertEqual(sparks["石白深蓝之夜"]["remaining"], 37)
         self.assertTrue(any("标准" in g["title"] for g in self.report["data_gaps"]))
-        self.assertIn("双金还债", self.report["share"]["text"])
+        self.assertIn("欧皇", self.report["share"]["text"])
         self.assertNotIn(TEST_UID, self.report["share"]["text"])
         self.assertIn("#明日方舟", self.report["share"]["text"])
         self.assertEqual(len(self.report["share"]["variants"]), 3)
@@ -326,7 +326,11 @@ class P0Test(unittest.TestCase):
         apply_pool_meta(stats, pd)
         report = build_report(stats, "测试博士",
                               coverage_report(recs), domain=pd)
-        self.assertEqual(report["title"]["label"], "保底人")
+        # 主称号固定为评级（该档 1 段均值 1 抽，落在欧/小欧档）；
+        # “保底人”降级为候选，caption 讲“当前垫 98”而不是误写“最长 1”
+        self.assertIn(report["title"]["label"], ("欧皇", "小欧"))
+        cand = [x["label"] for x in report["title_candidates"]]
+        self.assertIn("保底人", cand)
         self.assertIn("当前垫 98", report["title"]["caption"])
         self.assertNotIn("最长 1", report["title"]["caption"])
         self.assertEqual(report["verification"], [])
@@ -396,7 +400,7 @@ class P0Test(unittest.TestCase):
             md = render_markdown(self.report, self.stats, detail=True, with_audit=True)
             self.assertNotIn(TEST_UID, md)
             self.assertIsNone(uid_shown.search(md))
-            self.assertIn("双金还债", md)
+            self.assertIn("欧皇", md)
             self.assertIn("95.3", md)
             self.assertIn("按池独立", md)
             self.assertIn("不跨池合并", md)
@@ -410,6 +414,114 @@ class P0Test(unittest.TestCase):
             self.assertIn("复制文案", page)
             self.assertIn("按池独立", page)
             self.assertIn("分享文案", page)
+
+
+class ArchivePageTest(unittest.TestCase):
+    """全能档案页（v1.0）：两页签结构 / 泰拉口径 / 降级 / 隐私。离线合成数据。"""
+
+    FAKE_META = {
+        "char_a": {"name": "测试甲", "rarity": 6, "profession": "近卫", "sub": "",
+                   "nation": "rhodes", "group": "", "team": "", "dn": "R001"},
+        "char_b": {"name": "测试乙", "rarity": 6, "profession": "狙击", "sub": "",
+                   "nation": "yan", "group": "", "team": "", "dn": "YD01"},
+        "char_c": {"name": "测试丙", "rarity": 5, "profession": "术师", "sub": "",
+                   "nation": "columbia", "group": "", "team": "", "dn": "CB01"},
+        "char_d": {"name": "测试丁", "rarity": 6, "profession": "辅助", "sub": "",
+                   "nation": "", "group": "babel", "team": "", "dn": "KZ01"},
+        "char_e": {"name": "测试戊", "rarity": 6, "profession": "医疗", "sub": "",
+                   "nation": "", "group": "", "team": "laios", "dn": "LT01"},
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        cls.report = build_report(
+            analyze_records(_records(), _fake_index())[0], "测试博士",
+            coverage_report(_records()),
+            domain=build_pool_stats(_records(), _fake_index()),
+        )
+
+    def _chars(self, owned_ids):
+        return [{"char_id": cid, "name": m["name"], "rarity": m["rarity"],
+                 "profession": m["profession"], "level": 50, "evolve": 2,
+                 "potential": 1, "skill": 7, "mastery": 3, "mod": False, "skin_id": ""}
+                for cid, m in self.FAKE_META.items() if cid in owned_ids]
+
+    def test_four_tabs_and_terra(self):
+        from ark_archive_html import build_archive_html
+        with tempfile.TemporaryDirectory() as td:
+            path = build_archive_html(self.report, self._chars({"char_a", "char_c", "char_d"}),
+                                      os.path.join(td, "archive.html"),
+                                      meta=self.FAKE_META)
+            with open(path, encoding="utf-8") as f:
+                page = f.read()
+            for tab in ("ab-gacha", "ab-terra"):
+                self.assertIn(f'id="{tab}"', page)
+            self.assertIn('id="abt-gacha" data-tab="gacha"', page)
+            self.assertIn("寻访分析", page)
+            self.assertIn("泰拉图鉴", page)
+            self.assertIn("id=\"tc-map\"", page)
+            # 4 名六星（甲/乙/丁/戊）→ 4 hex；持有甲+丁 → 2 归档；乙/戊为缺口
+            self.assertEqual(page.count('class="hx '), 4)
+            self.assertIn('"sixTotal":4', page.replace(" ", ""))
+            self.assertIn('"sixOwned":2', page.replace(" ", ""))
+            # babel → 卡兹戴尔、laios → 联动（归属兜底）
+            self.assertIn('"kazdel"', page)
+            self.assertIn('"collab"', page)
+            # 干员筛选页签已并入泰拉页（看板娘/助战 + 干员池特征），不再单开页签
+            self.assertNotIn('id="ab-box"', page)
+            self.assertIn('id="to-grid"', page)
+            self.assertIn('id="sh-canvas"', page)
+            self.assertIn('id="fab-top"', page)
+            self.assertIn('id="fab-share"', page)
+            self.assertNotIn('id="ab-share"', page)
+            self.assertIn("window.ARK", page)
+            # 内嵌 JSON 不应携带布局格与剪影（瘦身断言）
+            self.assertNotIn('"cells"', page)
+            self.assertNotIn('"silhouette"', page)
+
+    def test_share_card_canvas_contract(self):
+        """分享卡是 Canvas 现画的，纯 DOM 断言抓不到"画歪了"，这里锁住三条已知坑。"""
+        from ark_archive_html import build_archive_html
+        with tempfile.TemporaryDirectory() as td:
+            path = build_archive_html(self.report, self._chars({"char_a"}),
+                                      os.path.join(td, "share.html"),
+                                      meta=self.FAKE_META)
+            with open(path, encoding="utf-8") as f:
+                page = f.read()
+            # 1) 警示条必须是 10px 细条（曾误写成 500px，把标题和页脚整块盖成黑底黑字）
+            self.assertIn("var HAZ_H=10", page)
+            self.assertNotIn("fillRect(0,y,1080,500)", page)
+            # 2) 地图 SVG 必须自带内联样式：序列化成图片画进 Canvas 时页面 CSS 不跟随，
+            #    否则整张泰拉图退化成纯黑剪影
+            self.assertIn("<style>", page)
+            self.assertIn(".landmass{fill:#E8E4DA", page)
+            self.assertIn(".hx-o{fill:#C9A25E", page)
+            # 3) 分享卡页头要能写"记录截至 X"，payload 里必须带 date（曾渲染成 undefined）
+            self.assertIn('"date":', page)
+            self.assertNotIn("记录截至 undefined", page)
+
+    def test_degrade_to_single_page_without_chars(self):
+        from ark_archive_html import build_archive_html
+        with tempfile.TemporaryDirectory() as td:
+            path = build_archive_html(self.report, None, os.path.join(td, "plain.html"))
+            with open(path, encoding="utf-8") as f:
+                page = f.read()
+            self.assertNotIn("ab-nav", page)
+            self.assertNotIn("tc-map", page)
+
+    def test_site_mode_nick_and_no_uid(self):
+        from ark_archive_html import build_archive_html
+        with tempfile.TemporaryDirectory() as td:
+            path = build_archive_html(self.report, self._chars({"char_a"}),
+                                      os.path.join(td, "site.html"),
+                                      site_mode=True, meta=self.FAKE_META)
+            with open(path, encoding="utf-8") as f:
+                page = f.read()
+            self.assertIn('content="noindex', page)
+            # site_mode：内嵌数据昵称强制"博士"，不携带原昵称/UID
+            self.assertIn('"nick":"博士"', page.replace(" ", ""))
+            self.assertNotIn('"nick":"测试博士"', page.replace(" ", ""))
+            self.assertNotIn(TEST_UID, page)
 
 
 if __name__ == "__main__":

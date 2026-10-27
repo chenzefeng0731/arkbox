@@ -18,7 +18,13 @@ docs/真实数据*
 prompt-for-chatgpt.md
 docs/Kimi评审验收-P0P1P2.md
 docs/参考-ChatGPT独立方案原稿.md
+# 含真实昵称的交接记录与调研期产物
+docs/交接-dsh-2026-10-25.md
+docs/地图图鉴-调研/
 
 # 本工具运行残留
 .arkbox-*
 *.tmp
+
+# 生成产物（HTML 档案页/海报 PNG，含真实昵称，不进公开仓库）
+output/

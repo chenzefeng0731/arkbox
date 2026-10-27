@@ -73,7 +73,7 @@ def main():
     html_path = newest("~/.arkbox/reports/gacha_*.html")
     check("报告文件存在", bool(html_path))
     page = open(html_path, encoding="utf-8").read() if html_path else ""
-    check("称号=双金还债", "双金还债" in page)
+    check("称号候选=三顾茅庐", "三顾茅庐" in page)
     check("总抽数=294", "294" in page)
     check("池内均值=23.4", "23.4" in page)
     check("理论位置=95.3", "95.3" in page)
@@ -92,7 +92,7 @@ def main():
     print("[C2] Markdown 口径输出")
     r = run_cli(["--records", FIXTURES, "--nick", "演示博士", "--detail", "--audit"], tmp)
     check("Markdown 退出码 0", r.returncode == 0, r.stderr[-300:])
-    for kw in ("双金还债", "按池独立", "不跨池合并", "294", "95.3", "称号候选"):
+    for kw in ("三顾茅庐", "按池独立", "不跨池合并", "294", "95.3", "称号候选"):
         check(f"Markdown 含「{kw}」", kw in r.stdout)
 
     # C3 坏输入 --------------------------------------------------------

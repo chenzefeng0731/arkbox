@@ -223,19 +223,23 @@ def _compact(p):
     </div>'''
 
 
+_GOLD_CN = {2: "双", 3: "三", 4: "四", 5: "五", 6: "六"}
+
+
 def _title_tags(report):
+    """副签直接从事件数据生成，不依赖主称号 kind（主称号固定为评级）。"""
     tags = []
-    kind = report["title"].get("kind")
-    label = report["title"]["label"]
-    if kind and kind.startswith("ten_pull"):
-        tags.append((label.split("还债")[0] if "还债" in label else label, "gold"))
-    if kind == "ten_pull_debt":
-        tags.append(("还债", "black"))
-    if report["metrics"].get("max_duplicate", 0) >= 3:
-        d = report["metrics"]["duplicates"][0]
+    m = report["metrics"]
+    best = report.get("best_ten")
+    if best and best.get("six_count", 0) >= 2:
+        tags.append((_GOLD_CN.get(best["six_count"], str(best["six_count"])) + "金", "gold"))
+        if (m.get("max_gap") or 0) >= 50:
+            tags.append((f'{m["max_gap"]} 抽才出', "black"))
+    if m.get("max_duplicate", 0) >= 3:
+        d = m["duplicates"][0]
         tags.append((f"三顾茅庐 · {d['name']}×{d['count']}", "blue"))
-    if report["metrics"].get("up_total"):
-        tags.append((f"UP {report['metrics']['up_hits']}/{report['metrics']['up_total']}", "blue"))
+    if m.get("up_total"):
+        tags.append((f'UP {m["up_hits"]}/{m["up_total"]}', "blue"))
     return "".join(_tag(t, c) for t, c in tags[:4])
 
 

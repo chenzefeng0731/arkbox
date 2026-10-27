@@ -135,7 +135,7 @@ def _pool_card(p, index):
           <span class="ptag plain">{_h(up_label)}</span>
           {('<span class="ptag recent">记录最近</span>' if index == 0 else '')}
         </div>
-        <div class="pool-count"><b>{p.get("total")}</b> 抽 · <b>{p.get("six_count")}</b> 六星</div>
+        <div class="pool-count"><b>{p.get("total")}</b> 抽 · <b>{p.get("six_count")}</b> 名六星</div>
       </header>
       <div class="pool-meta">{_ts_range(p)} · 池内均值 {p.get("avg_gap") or "—"} · 最长 {p.get("worst_gap") or "—"}</div>
       <div class="pool-story">{_h(p.get("conclusion"))}</div>
@@ -161,7 +161,7 @@ def _type_cards(report):
     for t in report.get("pool_types") or []:
         cards.append(f'''<div class="type-card">
           <div class="type-top"><b>{_h(t.get("label"))}</b><span>{t.get("pulls")} 抽</span></div>
-          <div class="type-nums"><span>{t.get("six")} 六星</span>
+          <div class="type-nums"><span>{t.get("six")} 名六星</span>
             <span>池内均值 {t.get("mean_gap") if t.get("mean_gap") is not None else "—"}</span>
             <span>UP {(str(t.get("up_hits")) + "/" + str(t.get("up_total"))) if t.get("up_total") else "—"}</span></div>
           <div class="type-pools">{_h("、".join(t.get("pools") or []))}</div>
@@ -180,10 +180,10 @@ def _compare(report):
     return f'''<div class="compare">
       <div class="cmp-card"><span class="cmp-k">最近一池</span>
         <b>{_h(latest["pool"])}</b><strong>{l_mean}</strong>
-        <span class="cmp-s">池内均值 · {latest["pulls"]} 抽 / {latest["six"]} 六星</span></div>
+        <span class="cmp-s">池内均值 · {latest["pulls"]} 抽 / {latest["six"]} 名六星</span></div>
       <div class="cmp-card"><span class="cmp-k">更早 {earlier["pools"]} 池</span>
         <b>合计</b><strong>{e_mean}</strong>
-        <span class="cmp-s">池内均值 · {earlier["pulls"]} 抽 / {earlier["six"]} 六星</span></div>
+        <span class="cmp-s">池内均值 · {earlier["pulls"]} 抽 / {earlier["six"]} 名六星</span></div>
       <div class="cmp-delta">最近一池相对更早池：<b>{delta_txt}</b><br><span>{_h(c.get("note"))}</span></div>
     </div>'''
 
@@ -219,7 +219,8 @@ def _pool_table(report):
       <tbody>{"".join(rows)}</tbody></table></div>'''
 
 
-def render_html(report, out_path, limit=None, site_mode=False):
+def render_body(report, site_mode=False, limit=None):
+    """报告主体（<main>…</main>，含自带 JS）：供单页与本馆档案页 tab 复用。"""
     m = report["metrics"]
     luck = report["luck"]
     totals = report["totals"]
@@ -264,19 +265,9 @@ def render_html(report, out_path, limit=None, site_mode=False):
         for i, v in enumerate(share.get("variants") or [])
     )
     title_tags = _title_tags(report)
-    page_title = ("明日方舟寻访档案 · ArkBox" if site_mode
-                  else f'寻访档案 · {_h(report["doctor"]["nick"])}')
-    robots = ('<meta name="robots" content="noindex,nofollow,noarchive">\n'
-              if site_mode else "")
     site_note = ('<div class="site-note">公开分享页 · 昵称显示为博士 · 不含 UID · '
                  '数据仅覆盖本档案区间 · 非全服排名</div>' if site_mode else "")
-    html_text = f'''<!DOCTYPE html>
-<html lang="zh"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-{robots}<title>{page_title}</title>
-<style>{CSS}</style></head><body>
-<div class="grid"></div><div class="hazard"></div>
-<main class="wrap">
+    return f'''
   {site_note}
   <header class="header">
     <div class="header-left">
@@ -306,15 +297,15 @@ def render_html(report, out_path, limit=None, site_mode=False):
     <div class="stat"><div class="v">{up_disp}</div><div class="l">UP 命中</div>
       <div class="s">{up_sub}</div></div>
   </section>
-  <div class="overall">整体 {overall_disp} 抽/六星（含当前垫 {m.get("current_pity_total")} 抽） · 期望 {luck.get("expected_gap")} 抽/六星 · 非全服排名</div>
+  <div class="overall">整体效率 {overall_disp} 抽/六星（把当前垫抽也算进分母，与上方“池内均值”口径不同） · 期望 {luck.get("expected_gap")} 抽/六星 · 非全服排名</div>
 
   <div class="banner">
     <div class="bcell"><span class="bk">最欧</span><span class="bv">{best_disp}</span>
       <span class="bx">{best_detail}</span></div>
     <div class="bcell"><span class="bk">最非</span><span class="bv">{worst_disp}</span>
       <span class="bx">{worst_detail}</span></div>
-    <div class="bcell"><span class="bk">UP 命中</span><span class="bv">{up_disp}</span>
-      <span class="bx">{up_sub}</span></div>
+    <div class="bcell"><span class="bk">当前垫抽</span><span class="bv">{m.get("current_pity_total") or 0} 抽</span>
+      <span class="bx">{_h(pity_bits) or "暂无垫抽"} · 各池独立</span></div>
   </div>
 
   <div class="section"><span class="num">01</span><span class="t">卡池时间线</span><span class="line"></span></div>
@@ -343,20 +334,11 @@ def render_html(report, out_path, limit=None, site_mode=False):
   <div class="privacy-box"><b>隐私</b><p>产物不展示 UID · {_h(privacy_note)}</p></div>
   <p class="note">{_h(cov.get("line"))}</p>
 
-  <details class="audit"><summary>数据口径与校验（点开核对）</summary>
-    <h3>按池独立明细</h3>
-    {_pool_table(report)}
-    <h3>审计表</h3>
-    {_audit_table(report)}
-    <p>口径：六星间隔按池独立统计，不跨池合并；理论位置是模型推算，不是全服排名。{pity_note}</p>
-  </details>
-
   <footer class="footer">
     <div class="tri"><span class="mark">◇</span> RHODES ISLAND <span>· ARKBOX ARCHIVE</span></div>
     {_barcode(report["privacy"]["barcode_seed"])}
     <div class="foot-line">{_h(cov.get("short"))} · 99 抽为六星硬保底 · 非官方玩家工具 · 数据本地 / 头像公开 CDN · 生成于 {date_str}</div>
   </footer>
-</main>
 <script>
 (function() {{
   var title = document.getElementById('hero-title');
@@ -397,7 +379,24 @@ def render_html(report, out_path, limit=None, site_mode=False):
     }});
   }}
 }})();
-</script>
+</script>'''
+
+
+def render_html(report, out_path, limit=None, site_mode=False):
+    """单页报告（兼容入口）：完整 HTML，只含寻访分析一个 tab。"""
+    totals = report["totals"]
+    date_str = report.get("generated") or datetime.now().strftime("%Y.%m.%d")
+    page_title = ("明日方舟寻访档案 · ArkBox" if site_mode
+                  else f'寻访档案 · {_h(report["doctor"]["nick"])}')
+    robots = ('<meta name="robots" content="noindex,nofollow,noarchive">\n'
+              if site_mode else "")
+    html_text = f'''<!DOCTYPE html>
+<html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+{robots}<title>{page_title}</title>
+<style>{CSS}</style></head><body>
+<div class="grid"></div><div class="hazard"></div>
+{render_body(report, site_mode=site_mode, limit=limit)}
 </body></html>'''
     out_path = os.path.expanduser(out_path)
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
@@ -415,20 +414,20 @@ CSS = """
 *{margin:0;padding:0;box-sizing:border-box}
 html{background:#E9E9E4}
 body{background:var(--paper);color:var(--ink);font:16px/1.6 -apple-system,'PingFang SC','Helvetica Neue',sans-serif;position:relative;min-height:100vh}
-.grid{position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(21,23,24,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(21,23,24,.05) 1px,transparent 1px);background-size:32px 32px}
-.site-note{font:700 9px 'SF Mono',Menlo,monospace;color:var(--blue);letter-spacing:.4px;margin:0 0 10px;padding:5px 7px;border:1px solid rgba(0,152,220,.28);background:rgba(0,152,220,.05)}
+.grid{position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(21,23,24,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(21,23,24,.035) 1px,transparent 1px);background-size:32px 32px}
+.site-note{font:700 10.5px 'SF Mono',Menlo,monospace;color:var(--blue);letter-spacing:.4px;margin:0 0 10px;padding:5px 7px;border:1px solid rgba(0,152,220,.28);background:rgba(0,152,220,.05)}
 .hazard{height:10px;background:linear-gradient(90deg,#151718 0 46%,#0098DC 46% 54%,#151718 54% 100%)}
-.wrap{position:relative;max-width:860px;margin:0 auto;padding:22px 18px 42px}
+.wrap{position:relative;max-width:960px;margin:0 auto;padding:22px 18px 42px}
 .header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .header-left{min-width:0;flex:1}
-.kicker{display:flex;justify-content:space-between;gap:8px;font:700 9px 'SF Mono',Menlo,monospace;color:var(--blue);letter-spacing:1px}
+.kicker{display:flex;justify-content:space-between;gap:8px;font:700 11px 'SF Mono',Menlo,monospace;color:var(--blue);letter-spacing:1px}
 .kicker .file{color:var(--dim2);letter-spacing:.5px}
 h1{font-size:28px;font-weight:900;letter-spacing:.5px;margin-top:5px}
 h1 b{color:var(--blue)}
 .doctor{margin-top:5px;font:600 11px 'SF Mono',Menlo,monospace;color:var(--dim);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .doctor b{color:var(--ink)}
 .tenure{color:var(--blue);font-weight:700;white-space:nowrap}
-.chip{font:700 10px 'SF Mono',Menlo,monospace;color:var(--blue);border:1px solid rgba(0,152,220,.4);padding:2px 6px;background:rgba(255,255,255,.5)}
+.chip{font:700 11px 'SF Mono',Menlo,monospace;color:var(--blue);border:1px solid rgba(0,152,220,.4);padding:2px 6px;background:rgba(255,255,255,.5)}
 .seal{width:78px;height:78px;border:3px solid rgba(200,42,54,.8);border-radius:50%;transform:rotate(9deg);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .seal-in{text-align:center;color:rgba(200,42,54,.85);border:2px solid rgba(200,42,54,.45);border-radius:50%;width:64px;height:64px;display:flex;flex-direction:column;justify-content:center;gap:1px}
 .seal .s1{font:900 8px 'SF Mono',Menlo;letter-spacing:1px}
@@ -449,13 +448,13 @@ h1 b{color:var(--blue)}
 .stat.blue .v{color:var(--blue)}
 .stat .l{font-size:17px;font-weight:800;margin-top:4px}
 .stat .s{font:500 11px 'SF Mono',Menlo,monospace;color:var(--dim2);margin-top:2px;line-height:1.35}
-.overall{font:500 11px 'SF Mono',Menlo,monospace;color:var(--dim2);margin-top:7px;line-height:1.5}
+.overall{font:500 12px 'SF Mono',Menlo,monospace;color:var(--dim2);margin-top:7px;line-height:1.5}
 .banner{display:grid;grid-template-columns:repeat(3,1fr);background:var(--blue);color:#fff;margin-top:12px;clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
 .bcell{padding:8px 8px 9px;border-left:1px solid rgba(255,255,255,.35);min-width:0}
 .bcell:first-child{border-left:0}
 .bk{display:block;font-size:12px;font-weight:800;opacity:.9}
 .bv{display:block;font:900 22px 'SF Mono',Menlo;letter-spacing:-1px;line-height:1.2}
-.bx{display:block;font:600 9px 'SF Mono',Menlo;opacity:.92;line-height:1.35;margin-top:1px;overflow:hidden;text-overflow:ellipsis}
+.bx{display:block;font:600 10.5px 'SF Mono',Menlo;opacity:.92;line-height:1.35;margin-top:1px;overflow:hidden;text-overflow:ellipsis}
 .section{display:flex;align-items:center;gap:8px;margin:24px 0 8px}
 .section .num{font:700 10px 'SF Mono',Menlo;color:var(--blue);letter-spacing:1px}
 .section .t{font-size:19px;font-weight:900;letter-spacing:.5px}
@@ -475,7 +474,7 @@ h1 b{color:var(--blue)}
 .ptag.other{background:#fff;color:var(--dim);border-color:var(--line)}
 .ptag.plain{background:rgba(255,255,255,.7);color:var(--dim);border-color:var(--line)}
 .ptag.recent{background:var(--blue);color:#fff}
-.pool-meta{font:500 10px 'SF Mono',Menlo;color:var(--dim2);margin-top:3px}
+.pool-meta{font:500 11.5px 'SF Mono',Menlo;color:var(--dim2);margin-top:3px}
 .pool-story{font-size:14px;font-weight:800;margin-top:5px;color:rgba(21,23,24,.78)}
 .ops{display:flex;gap:7px;flex-wrap:wrap;align-items:flex-start;margin-top:9px}
 .op{position:relative;width:56px;flex:0 0 auto}
@@ -484,21 +483,21 @@ h1 b{color:var(--blue)}
 .op img{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block}
 .op .fallback{display:flex;position:absolute;inset:0;align-items:center;justify-content:center;font:900 22px 'SF Mono',Menlo;color:var(--dim2);background:rgba(21,23,24,.04);z-index:0}
 .op .avatar.noimg .fallback{display:flex}
-.op .nm{background:#000;color:#fff;font:700 9px -apple-system,'PingFang SC';text-align:center;padding:2px 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.op.big .nm{font-size:11px}
-.op .pull{font:500 8px 'SF Mono',Menlo;color:var(--dim2);text-align:center;margin-top:1px;white-space:nowrap}
-.op.big .pull{font-size:9px}
+.op .nm{background:#000;color:#fff;font:700 10px -apple-system,'PingFang SC';text-align:center;padding:2px 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.op.big .nm{font-size:12px}
+.op .pull{font:500 9px 'SF Mono',Menlo;color:var(--dim2);text-align:center;margin-top:1px;white-space:nowrap}
+.op.big .pull{font-size:10px}
 .op .badge{position:absolute;top:2px;left:2px;background:var(--red);color:#fff;font:800 8px -apple-system;padding:1px 3px;z-index:2}
 .op .badge.dup{background:var(--gold);left:auto;right:2px}
 .more{width:56px;height:82px;display:flex;align-items:center;justify-content:center;font:800 16px 'SF Mono',Menlo;color:var(--dim2);border:1px dashed var(--line)}
 .bar-row{margin-top:9px}
 .bar-row.spark{margin-top:7px}
-.bar-info{display:flex;justify-content:space-between;gap:8px;font:600 10px 'SF Mono',Menlo;color:var(--dim);margin-bottom:3px}
+.bar-info{display:flex;justify-content:space-between;gap:8px;font:600 11.5px 'SF Mono',Menlo;color:var(--dim);margin-bottom:3px}
 .bar-info b{color:var(--ink)}
 .bar{height:6px;background:rgba(21,23,24,.08);border:1px solid var(--line);position:relative;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--blue)}
 .bar-row.spark .bar i{background:var(--gold)}
-.bar-note{font:500 9px 'SF Mono',Menlo;color:var(--dim2);margin-top:2px;line-height:1.4}
+.bar-note{font:500 10.5px 'SF Mono',Menlo;color:var(--dim2);margin-top:2px;line-height:1.4}
 .tl{margin-top:12px}
 .tl-track{position:relative;height:8px;background:rgba(21,23,24,.07);border:1px solid var(--line);margin-top:14px}
 .seg{position:absolute;top:0;height:100%}
@@ -507,15 +506,15 @@ h1 b{color:var(--blue)}
 .seg.r{background:var(--red)}
 .seg.p{background:repeating-linear-gradient(45deg,rgba(21,23,24,.35) 0 3px,rgba(21,23,24,.08) 3px 6px)}
 .dot{position:absolute;top:-5px;width:2px;height:18px;background:var(--ink)}
-.tl-label{position:absolute;top:-17px;transform:translateX(-50%);font:800 9px 'SF Mono',Menlo;white-space:nowrap}
+.tl-label{position:absolute;top:-17px;transform:translateX(-50%);font:800 10px 'SF Mono',Menlo;white-space:nowrap}
 .tl-label.r{color:var(--red)}
 .tl-label.b{color:var(--blue)}
-.tl-ends{display:flex;justify-content:space-between;font:500 9px 'SF Mono',Menlo;color:var(--dim2);margin-top:2px}
+.tl-ends{display:flex;justify-content:space-between;font:500 10px 'SF Mono',Menlo;color:var(--dim2);margin-top:2px}
 .events{margin-top:11px;border-top:1px solid var(--line)}
-.event{display:grid;grid-template-columns:54px 1fr 84px 60px;gap:4px;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(21,23,24,.08);font:500 10px 'SF Mono',Menlo}
+.event{display:grid;grid-template-columns:58px 1fr 88px 64px;gap:4px;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(21,23,24,.08);font:500 11.5px 'SF Mono',Menlo}
 .e-at{color:var(--dim2)}
 .e-name{font:700 11px -apple-system,'PingFang SC';color:var(--ink)}
-.e-name span{font:700 9px 'SF Mono',Menlo;margin-left:4px;color:var(--dim2)}
+.e-name span{font:700 10.5px 'SF Mono',Menlo;margin-left:4px;color:var(--dim2)}
 .e-name .up{color:var(--gold)}
 .e-name .off{color:var(--red)}
 .e-gap{color:var(--red);text-align:right;white-space:nowrap}
@@ -525,15 +524,15 @@ h1 b{color:var(--blue)}
 .type-card{background:var(--card);border:1px solid var(--line);padding:11px 12px}
 .type-top{display:flex;justify-content:space-between;gap:8px;font:800 13px -apple-system,'PingFang SC'}
 .type-top span{font:700 10px 'SF Mono',Menlo;color:var(--dim2)}
-.type-nums{display:flex;gap:8px;flex-wrap:wrap;font:500 9px 'SF Mono',Menlo;color:var(--dim);margin-top:5px}
-.type-pools{font:500 9px 'SF Mono',Menlo;color:var(--dim2);margin-top:4px;line-height:1.4}
+.type-nums{display:flex;gap:8px;flex-wrap:wrap;font:500 10.5px 'SF Mono',Menlo;color:var(--dim);margin-top:5px}
+.type-pools{font:500 10.5px 'SF Mono',Menlo;color:var(--dim2);margin-top:4px;line-height:1.4}
 .compare{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px;background:var(--card);border:1px solid var(--line);padding:10px}
 .cmp-card{border-right:1px solid var(--line);padding-right:8px}
 .cmp-card:nth-child(2){border-right:0}
-.cmp-k{display:block;font:700 9px 'SF Mono',Menlo;color:var(--blue);letter-spacing:.5px}
+.cmp-k{display:block;font:700 10.5px 'SF Mono',Menlo;color:var(--blue);letter-spacing:.5px}
 .cmp-card b{display:block;font-size:13px;margin-top:2px}
 .cmp-card strong{display:block;font:900 30px 'SF Mono',Menlo;letter-spacing:-1px;line-height:1.1}
-.cmp-s{display:block;font:500 8px 'SF Mono',Menlo;color:var(--dim2)}
+.cmp-s{display:block;font:500 9.5px 'SF Mono',Menlo;color:var(--dim2)}
 .cmp-delta{grid-column:1 / -1;border-top:1px solid var(--line);padding-top:6px;font:600 9px 'SF Mono',Menlo;color:var(--dim)}
 .cmp-delta b{color:var(--red)}
 .cmp-delta span{color:var(--dim2)}
@@ -548,14 +547,14 @@ h1 b{color:var(--blue)}
 .share-chip.active{background:var(--blue);border-color:var(--blue);color:#fff}
 .copy{margin-top:9px;font:800 12px -apple-system,'PingFang SC';background:var(--blue);color:#fff;border:0;padding:7px 12px;cursor:pointer}
 .copy:active{transform:translateY(1px)}
-.privacy{font:500 9px 'SF Mono',Menlo;color:var(--dim2);margin-top:8px;line-height:1.5}
+.privacy{font:500 10.5px 'SF Mono',Menlo;color:var(--dim2);margin-top:8px;line-height:1.5}
 .gaps{display:grid;gap:7px}
 .gap-card{background:rgba(184,134,11,.06);border-left:4px solid var(--gold);padding:8px 10px}
 .gap-card b{font-size:12px}
-.gap-card p{font:500 10px 'SF Mono',Menlo;color:var(--dim);line-height:1.55;margin-top:2px}
+.gap-card p{font:500 11px 'SF Mono',Menlo;color:var(--dim);line-height:1.55;margin-top:2px}
 .privacy-box{margin-top:9px;background:rgba(0,152,220,.05);border-left:4px solid var(--blue);padding:8px 10px}
 .privacy-box b{font-size:12px}
-.privacy-box p{font:500 10px 'SF Mono',Menlo;color:var(--dim);line-height:1.55;margin-top:2px}
+.privacy-box p{font:500 11px 'SF Mono',Menlo;color:var(--dim);line-height:1.55;margin-top:2px}
 .audit{margin-top:20px;background:var(--card);border:1px solid var(--line);padding:12px 12px 14px;font-size:11px}
 .audit summary{cursor:pointer;font-weight:800;color:var(--dim)}
 .audit h3{font-size:12px;margin:14px 0 6px}
@@ -563,13 +562,13 @@ h1 b{color:var(--blue)}
 .audit table{border-collapse:collapse;min-width:620px;width:100%;font-size:9px}
 .audit th,.audit td{border-bottom:1px solid var(--line);padding:5px 4px;text-align:left;vertical-align:top}
 .audit th{color:var(--dim2);font-weight:600;white-space:nowrap}
-.audit p{font:500 10px 'SF Mono',Menlo;color:var(--dim2);line-height:1.55;margin-top:8px}
+.audit p{font:500 11px 'SF Mono',Menlo;color:var(--dim2);line-height:1.55;margin-top:8px}
 .footer{margin-top:26px;padding-top:10px;border-top:1px solid var(--line)}
-.footer .tri{font:700 9px 'SF Mono',Menlo;color:var(--dim2);letter-spacing:1px}
+.footer .tri{font:700 10px 'SF Mono',Menlo;color:var(--dim2);letter-spacing:1px}
 .footer .mark{color:var(--blue)}
 .footer .barcode{display:flex;align-items:flex-end;height:16px;margin:7px 0}
 .footer .barcode i{background:var(--ink);height:100%;display:block}
-.foot-line{font:500 9px 'SF Mono',Menlo;color:var(--dim2);line-height:1.55}
+.foot-line{font:500 10.5px 'SF Mono',Menlo;color:var(--dim2);line-height:1.55}
 @media (max-width:430px){
   .kicker .file{display:none}
 }

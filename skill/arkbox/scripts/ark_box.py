@@ -77,6 +77,7 @@ def fetch_chars(creds, uid):
         char_id = c.get("charId", "")
         m = meta.get(char_id, {})
         equips = c.get("equip") or []
+        skills = c.get("skills") or []
         chars.append({
             "char_id": char_id,
             "name": m.get("name") or char_id,
@@ -85,11 +86,51 @@ def fetch_chars(creds, uid):
             "level": c.get("level", 0),
             "evolve": c.get("evolvePhase", 0),
             "potential": c.get("potentialRank", 0) + 1,
-            "mastery": c.get("skillLevel", 0),
+            # 官方 API 无 skillLevel 字段（旧映射恒 0）：主技能等级=mainSkillLvl(1-7)，
+            # 专精=skills[].specializeLevel 取最大(0-3)。ark_archive_html 的 mas=专精语义。
+            "skill": c.get("mainSkillLvl", 0),
+            "mastery": max([0] + [(s.get("specializeLevel") or 0) for s in skills]),
             "mod": any((e.get("level") or 0) > 0 for e in equips),
             "skin_id": c.get("skinId", ""),
         })
     return chars, data
+
+
+def extract_profile(data, chars):
+    """从 player_info 抽「名片级」信息：看板娘 + 助战干员。
+
+    看板娘来自 status.secretary（只给 charId/skinId），等级练度回 chars 里补；
+    助战来自 assistChars（自带等级/精英化/潜能/专精/模组）。
+    纯读取，不写归档；取不到就返回空，不影响其他页签。
+    """
+    by_id = {c.get("char_id"): c for c in (chars or [])}
+
+    def _fill(cid, skin_id="", src=None):
+        base = by_id.get(cid) or {}
+        src = src or {}
+        return {
+            "id": cid,
+            "name": base.get("name") or cid,
+            "rarity": base.get("rarity") or 0,
+            "profession": base.get("profession") or "?",
+            "level": src.get("level") or base.get("level") or 0,
+            "evolve": src.get("evolvePhase") if src.get("evolvePhase") is not None
+                      else (base.get("evolve") or 0),
+            "potential": (src.get("potentialRank") + 1) if src.get("potentialRank") is not None
+                         else (base.get("potential") or 1),
+            "skill": src.get("mainSkillLvl") or 0,
+            "mastery": src.get("specializeLevel") or 0,
+            "mod": bool((src.get("equip") or {}).get("level")) if isinstance(src.get("equip"), dict)
+                   else bool(base.get("mod")),
+            "skin": skin_id or src.get("skinId") or base.get("skin_id") or "",
+        }
+
+    status = data.get("status") or {}
+    sec = status.get("secretary") or {}
+    secretary = _fill(sec.get("charId"), sec.get("skinId")) if sec.get("charId") else None
+    assist = [_fill(a.get("charId"), a.get("skinId"), a)
+              for a in (data.get("assistChars") or []) if a.get("charId")]
+    return {"secretary": secretary, "assist": assist}
 
 
 def render_gallery(chars, nick, out_path):
@@ -108,7 +149,7 @@ def render_gallery(chars, nick, out_path):
  <div class="row"><span>职业</span><span>{html.escape(c["profession"])}</span></div>
  <div class="row"><span>等级</span><span>Lv.{c["level"]} · {["未精","精一","精二"][c["evolve"]]}</span></div>
  <div class="row"><span>潜能</span><span>{c["potential"]}</span></div>
- <div class="row"><span>技能</span><span>{c["mastery"]}</span></div>
+ <div class="row"><span>技能</span><span>Lv.{c["skill"]}{" · 专%d" % c["mastery"] if c["mastery"] else ""}</span></div>
  <div class="row"><span>其他</span><span>{(skin + mod).strip(" ·") or "—"}</span></div>
 </div></details>''')
 
@@ -232,7 +273,8 @@ def main():
             lines.append(
                 f"| {c['name']} | {star.get(c['rarity'], '?')} | {c['profession']} "
                 f"| {c['level']} | {ev_zh.get(c['evolve'], '?')} | {c['potential']} "
-                f"| {c['mastery']} | {'、'.join(notes) or '—'} |"
+                f"| Lv.{c['skill']}{'·专%d' % c['mastery'] if c['mastery'] else ''} "
+                f"| {'、'.join(notes) or '—'} |"
             )
         if total > len(shown):
             lines.append(f"\n（还有 {total - len(shown)} 名未展示，可加 --limit 调整）")

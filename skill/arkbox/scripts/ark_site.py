@@ -17,7 +17,7 @@ import uuid
 from datetime import datetime
 
 from ark_report import build_report, verify_report
-from ark_report_html import render_html
+from ark_gacha import render_html
 
 
 DEFAULT_DISPLAY_NAME = "ArkBox 寻访档案"
@@ -31,7 +31,8 @@ def _load_meta(path):
         return {}
 
 
-def build_site(stats, pool_data, coverage, site_dir, generated=None, tenure=None):
+def build_site(stats, pool_data, coverage, site_dir, generated=None, tenure=None, chars=None,
+               profile=None):
     """把同一份统计渲染成公开站点，不复制海报/截图/Markdown。"""
     site_dir = os.path.abspath(os.path.expanduser(site_dir))
     dist = os.path.join(site_dir, "dist")
@@ -44,7 +45,7 @@ def build_site(stats, pool_data, coverage, site_dir, generated=None, tenure=None
     if errors:
         raise ValueError("站点报告校验失败：" + "；".join(errors))
     index = os.path.join(dist, "index.html")
-    render_html(site_report, index, site_mode=True)
+    render_html(site_report, stats, index, site_mode=True, chars=chars, profile=profile)
     with open(os.path.join(dist, "robots.txt"), "w", encoding="utf-8") as f:
         f.write("User-agent: *\nDisallow: /\n")
 

@@ -189,6 +189,54 @@ def _find_gap_event(pool, target_gap):
     return target_gap, None, None
 
 
+def _top_event_story(report):
+    """按事件优先级挑最值得一讲的事件句。
+
+    主称号固定为对人的评级后，事件降到 caption/副签/候选；这里保持
+    与旧版主称号一致的事件优先级，保证"讲到的事"不变。
+    """
+    m = report["metrics"]
+    best_ten = None
+    for tp in report.get("ten_pulls") or []:
+        if best_ten is None or (tp["six_count"], tp["ts"]) > (best_ten["six_count"], best_ten["ts"]):
+            best_ten = tp
+
+    long_gap = m.get("max_gap") or 0
+    current_long = m.get("current_pity_max") or 0
+    has_long_gap = bool(long_gap >= 50)
+
+    if best_ten and best_ten["six_count"] >= 2:
+        n = best_ten["six_count"]
+        evidence = f"{best_ten['pool']} {best_ten.get('pulls', 10)} 抽{_cn_gold(n)}金"
+        if has_long_gap:
+            return f"{evidence}，但{m.get('max_gap_pool')} {long_gap} 抽才出", "ten_pull_debt"
+        return evidence, "ten_pull_win" if n >= 3 else "ten_pull"
+
+    up_total = m.get("up_total") or 0
+    up_hits = m.get("up_hits") or 0
+    if up_total >= 3 and up_hits == up_total:
+        return f"UP {up_hits}/{up_total}", "up"
+    if up_total >= 3 and up_hits == 0:
+        return f"UP 0/{up_total}", "off"
+
+    if (m.get("max_duplicate") or 0) >= 3:
+        d = m["duplicates"][0]
+        return f'{d["name"]} ×{d["count"]}', "duplicate"
+
+    if has_long_gap:
+        story = f"最长 {long_gap} 抽才出"
+        if (m.get("best_gap") or 99) <= 10:
+            story += f"，最快 {m['best_gap']} 抽"
+        return story, "pity"
+    if current_long >= 50:
+        return f"当前垫 {current_long} 抽", "pity"
+
+    streak = _max_off_streak(report)
+    if streak >= 2:
+        return f"单池内连续 {streak} 个六星不是当期 UP", "off_streak"
+    return None
+
+
 def _choose_title(report, display_pools):
     totals = report["totals"]
     m = report["metrics"]
@@ -212,7 +260,7 @@ def _choose_title(report, display_pools):
             "kind": "zero",
         }
 
-    # 300 井优先：这是单池最硬的故事
+    # 300 井是档案状态级事件，保留为主称号
     for p in all_pools:
         if p["total"] >= 300:
             return {
@@ -223,89 +271,23 @@ def _choose_title(report, display_pools):
                 "kind": "spark",
             }
 
-    best_ten = None
-    for tp in report.get("ten_pulls") or []:
-        if best_ten is None or (tp["six_count"], tp["ts"]) > (best_ten["six_count"], best_ten["ts"]):
-            best_ten = tp
-
-    long_gap = m.get("max_gap") or 0
-    current_long = m.get("current_pity_max") or 0
-    has_long_gap = bool(long_gap >= 50)
-
-    if best_ten and best_ten["six_count"] >= 2:
-        n = best_ten["six_count"]
-        evidence = f"{best_ten['pool']} {best_ten.get('pulls', 10)} 抽{_cn_gold(n)}金"
-        if has_long_gap:
-            reversal = f"{m.get('max_gap_pool')} {long_gap} 抽才出"
-            return {
-                "label": f"{_cn_gold(n)}金还债",
-                "evidence": evidence,
-                "reversal": reversal,
-                "caption": f"{evidence}，但{reversal}",
-                "kind": "ten_pull_debt",
-            }
-        if n >= 3:
-            return {
-                "label": f"{_cn_gold(n)}金血赚",
-                "evidence": evidence,
-                "reversal": "",
-                "caption": evidence,
-                "kind": "ten_pull_win",
-            }
-        return {
-            "label": "双金",
-            "evidence": evidence,
-            "reversal": "",
-            "caption": evidence,
-            "kind": "ten_pull",
-        }
-
-    up_total = m.get("up_total") or 0
-    up_hits = m.get("up_hits") or 0
-    if up_total >= 3 and up_hits == up_total:
-        evidence = f"UP {up_hits}/{up_total}"
-        return {"label": "不歪拿下", "evidence": evidence, "reversal": "",
-                "caption": evidence, "kind": "up"}
-    if up_total >= 3 and up_hits == 0:
-        evidence = f"UP 0/{up_total}"
-        return {"label": "歪麻了", "evidence": evidence, "reversal": "",
-                "caption": evidence, "kind": "off"}
-
-    max_dup = m.get("max_duplicate") or 0
-    if max_dup >= 3:
-        dup = m["duplicates"][0]
-        evidence = f"{dup['name']} ×{dup['count']}"
-        return {"label": "三顾茅庐", "evidence": evidence, "reversal": "",
-                "caption": evidence, "kind": "duplicate"}
-
-    if has_long_gap or current_long >= 50:
-        if has_long_gap:
-            evidence = f"最长 {long_gap} 抽才出"
-            reversal = f"最快 {m['best_gap']} 抽" if (m.get("best_gap") or 99) <= 10 else ""
-        else:
-            evidence = f"当前垫 {current_long} 抽"
-            reversal = ""
-        return {
-            "label": "保底人",
-            "evidence": evidence,
-            "reversal": reversal,
-            "caption": f"{evidence}，但{reversal}" if reversal else evidence,
-            "kind": "pity",
-        }
-
+    # 主称号 = 对博士的固定评级（零阶解码）；事件降为 caption/副签/候选
+    story = _top_event_story(report)
     better = luck.get("better_than") or 0
     mean = m.get("mean_gap")
-    if better >= 80:
+    if better >= 90:
+        label, kind = "欧皇", "lucky"
+    elif better >= 70:
         label, kind = "小欧", "small_lucky"
     elif better >= 20:
         label, kind = "正常发挥", "normal"
     elif better >= 5:
         label, kind = "小非", "small_unlucky"
     else:
-        label, kind = "大非", "very_unlucky"
-    evidence = f"{luck.get('n', 0)} 段均值 {mean} 抽，优于 {better}% 样本"
-    return {"label": label, "evidence": evidence, "reversal": "",
-            "caption": evidence, "kind": kind}
+        label, kind = "大非酋", "very_unlucky"
+    tier_evidence = f"{luck.get('n', 0)} 段均值 {mean} 抽，理论优于 {better}%"
+    return {"label": label, "evidence": tier_evidence, "reversal": "",
+            "caption": story[0] if story else tier_evidence, "kind": kind}
 
 
 def _pool_type_summary(report):
@@ -379,7 +361,7 @@ def _title_candidates(report):
         n = best["six_count"]
         base = f'{best.get("pool")} {best.get("pulls", 10)} 抽{_cn_gold(n)}金'
         if has_long:
-            add(f"{_cn_gold(n)}金还债", f"{base}，但{long_gap} 抽才出", "ten_pull_debt")
+            add(f"{_cn_gold(n)}金，但 {long_gap} 抽才出", f"{base}，但{long_gap} 抽才出", "ten_pull_debt")
         elif n >= 3:
             add(f"{_cn_gold(n)}金血赚", base, "ten_pull_win")
         else:
@@ -409,17 +391,7 @@ def _title_candidates(report):
     if reached:
         add("吃井", f'{reached[0]["pool"]} 已到 {reached[0]["spark"]["threshold"]} 抽', "spark")
 
-    if not m.get("gap_count"):
-        return candidates
-    better = luck.get("better_than") or 0
-    if better >= 80:
-        add("小欧", f'{luck.get("n", 0)} 段均值 {m.get("mean_gap")} 抽，理论优于 {better}%', "small_lucky")
-    elif better >= 20:
-        add("正常发挥", f'{luck.get("n", 0)} 段均值 {m.get("mean_gap")} 抽，理论优于 {better}%', "normal")
-    elif better >= 5:
-        add("小非", f'{luck.get("n", 0)} 段均值 {m.get("mean_gap")} 抽，理论优于 {better}%', "small_unlucky")
-    else:
-        add("大非", f'{luck.get("n", 0)} 段均值 {m.get("mean_gap")} 抽，理论优于 {better}%', "very_unlucky")
+    return candidates
 
     return candidates
 
@@ -526,7 +498,7 @@ def _social_caption(report):
                 "variants": [{"label": "主文案", "text": caption + "\n" + tag_line}]}
     pieces = [
         f'{nick} 的寻访档案｜{report["title"]["label"]}：'
-        f'{report["totals"]["pulls"]} 抽 {report["totals"]["six"]} 六星，'
+        f'{report["totals"]["pulls"]} 抽 {report["totals"]["six"]} 名六星，'
         f'池内 {m.get("mean_gap")} 抽/六星（{m.get("gap_count")} 段）。'
     ]
     if best and best.get("six_count", 0) >= 2:
@@ -540,9 +512,9 @@ def _social_caption(report):
                   "仅本档案区间；理论模型，非全服排名。")
     caption = "".join(pieces)
     short = (f'{report["title"]["label"]}｜{report["totals"]["pulls"]} 抽 '
-             f'{report["totals"]["six"]} 六星，池内 {m.get("mean_gap")} 抽/六星，'
+             f'{report["totals"]["six"]} 名六星，池内 {m.get("mean_gap")} 抽/六星，'
              f'UP {m.get("up_hits")}/{m.get("up_total")}。')
-    data_text = (f'{report["totals"]["pulls"]} 抽 / {report["totals"]["six"]} 六星 / '
+    data_text = (f'{report["totals"]["pulls"]} 抽 / {report["totals"]["six"]} 名六星 / '
                  f'池内 {m.get("mean_gap")} 抽 / 理论位置 {luck.get("better_than")}% / '
                  f'UP {m.get("up_hits")}/{m.get("up_total")}。'
                  f'{report["title"]["label"]}，最长池内 {m.get("max_gap")} 抽。'
@@ -578,7 +550,7 @@ def _other_line(other, total_pools, display_count):
     if len(other) > 2:
         names += " 等"
     return (f"重点 {display_count} / 共 {total_pools} 池 · "
-            f"另有 {len(other)} 池 {pulls} 抽 {six} 六星（{names}，未展开）")
+            f"另有 {len(other)} 池 {pulls} 抽 {six} 名六星（{names}，未展开）")
 
 
 def build_report(stats, nick, coverage, hide_nick=False,
