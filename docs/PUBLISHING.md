@@ -57,3 +57,28 @@ grep -RnoE "UID[^<\n]{0,4}[0-9]{3,}" . --exclude-dir=.git --include="*.html"
 - `VERSION` 与 `CHANGELOG.md` 对齐。
 - GitHub Release 附 `.skill`/zip 包和 demo 截图。
 - 不要把本地 `site/` 或账号产物打进 release。
+
+## 7. README 截图更新
+
+README 的两张截图是**真实档案页的脱敏副本**（真实数据 + 昵称/日期脱敏），档案页改版后按下法重截：
+
+1. 取最新档案页（重跑 `analyze --html`，或用现成的 `output/档案页.html`）。
+2. 复制一份做脱敏：昵称换成展示昵称，日期全部打成 `XXXX-XX-XX`，入职天数一并不显示：
+
+   ```python
+   s = s.replace("<真实昵称>", "Amiya最好的博士")
+   s = s.replace("入职 <入职日期> · <N> 天", "入职 XXXX-XX-XX")
+   s = re.sub(r"\d{4}-\d{2}-\d{2}", "XXXX-XX-XX", s)
+   s = re.sub(r"\d{4}\.\d{2}\.\d{2}", "XXXX.XX.XX", s)
+   ```
+
+3. Chrome 无头截两个页签（同高视口，README 里并排才不参差）：
+
+   ```bash
+   chrome --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
+     --virtual-time-budget=20000 --screenshot=docs/demo-archive.png \
+     --window-size=1440,1560 "file://<脱敏副本>#gacha"
+   # demo-terra.png 同理，URL 换成 #terra
+   ```
+
+4. 断言脱敏副本：无真实昵称、无未打码日期、无 UID 形态串，再截图。
