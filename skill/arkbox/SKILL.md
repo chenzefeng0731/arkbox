@@ -119,8 +119,8 @@ python3 <skill目录>/scripts/ark_gacha.py analyze [--pool 关键词] [--limit N
 
 ### 输出与交付（精简版）
 
-- **Qoder 用户**：`--poster --site` → 抽卡海报 + 固定站点 URL；报告页头含入职天数。
-- **其他 Agent 用户**：`--poster --html` → 抽卡海报 + 自包含 `report.html`。
+- **想要固定站点**：`--poster --site` → 抽卡海报 + 可发布的站点目录；报告页头含入职天数。
+- **只要文件**：`--poster --html` → 抽卡海报 + 自包含 `report.html`。
 - `--poster` 生成抽卡海报 PNG；默认删中间源 HTML，要编辑加 `--keep-poster-source`。
 - **产物落盘位置**：`--html`/`--poster` 默认写 `~/.arkbox/reports/`（隐藏目录，通用场景的可移植默认）；
   在具体项目里跑时用 `--out-dir 目录` 指到项目内，别把产物丢进用户找不到的隐藏目录。
@@ -132,22 +132,21 @@ python3 <skill目录>/scripts/ark_gacha.py analyze [--pool 关键词] [--limit N
 - `--json` 输出报告模型 + 原始池统计；产物不含 UID。
 - 头像来自公开 CDN；报告页无外部 CSS/JS 依赖。
 
-### 发布 / 更新站点（Qoder Sites）
+### 发布 / 更新固定站点
 
 完整步骤见 `references/site_publish.md`。核心：
 
-1. 在项目根目录运行 `analyze --site --site-dir site --poster`；会生成 `site/.arkbox-publish.json`，里面是本次精确的 prepare 请求。
-2. 首次用 Qoder `prepare_site`（createNewSite）→ `publish_site` → 设 public；把 projectId/siteId/URL 写回 `site/.arkbox-site.json`。
-3. 后续只重跑 `--site`，读取 `.arkbox-publish.json` 的新 actionId 和同一 projectId 准备并发布；URL 不变。
+1. 在项目根目录运行 `analyze --site --site-dir site --poster`；会生成 `site/.arkbox-publish.json`，里面是本次精确的发布请求清单。
+2. 发布二选一：把 `site/dist/` 传到你用的静态托管（GitHub Pages / Cloudflare Pages / Vercel 等）；或交给具备站点发布能力的 Agent，让它读取 `.arkbox-publish.json` 直接发布。
+3. 后续更新只重跑 `--site` 再同步 `dist/`，URL 不变。
 4. 站点固定“博士”、不含 UID、noindex；海报保留昵称，是单独文件，不要上传到公开站点。
-5. 其他平台没有 Qoder Sites，直接交付 `poster.png` + `report.html`。
 
 ### 登录与跨平台
 
 - 凭证失效先用已保存的 `hg_token` 静默续期；只有 `hg_token` 失效才需要重新扫码。
 - 二维码：有 `qrcode` 就生成本地 PNG；没有就生成本地 HTML（公开 QR 服务仅接收一次性 scanId，不含凭证）。
 - 海报截图自动检测 Chrome/Edge/Chromium；找不到浏览器只出 HTML，不阻断。
-- 安装：`python3 install.py --target qoder` 或 `--target 自定义路径`；其他 Agent 读取目标目录的 SKILL.md 或直接用 CLI。
+- 安装：`python3 install.py`（自动探测 skills 目录）或 `--target <目录>`；Agent 读取目标目录的 SKILL.md 或直接用 CLI。
 - 环境自检：`python3 scripts/ark_doctor.py` 检查 Python、浏览器、qrcode、凭证与本地档案。
 
 ### 自测

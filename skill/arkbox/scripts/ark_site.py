@@ -5,9 +5,9 @@
 产出：
   <site_dir>/dist/index.html   公开报告页（昵称=博士，UID 隐藏，noindex）
   <site_dir>/dist/robots.txt   禁止抓取
-  <site_dir>/.arkbox-site.json 本工具自己的发布元数据（不是 Qoder 描述文件）
+  <site_dir>/.arkbox-site.json 本工具自己的发布元数据（不是托管方的描述文件）
 
-Qoder Sites 的 .qoder.site 描述文件由 prepare_site 生成，禁止手写。
+托管方的站点描述文件（如 *.qoder.site）由其 prepare 步骤生成，禁止手写。
 后续更新复用 .arkbox-site.json 里的 projectId / siteId / site_url。
 """
 
@@ -71,7 +71,7 @@ def build_site(stats, pool_data, coverage, site_dir, generated=None, tenure=None
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
 
-    # 给 Qoder Agent 的精确发布请求；项目 ID 已知时复用同一站点。
+    # 给具备站点发布能力的 Agent 的精确发布请求；项目 ID 已知时复用同一站点。
     publish = {
         "operation": "prepare_site",
         "state": "pending",

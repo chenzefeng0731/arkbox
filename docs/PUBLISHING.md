@@ -5,7 +5,7 @@
 不要提交（均已写入 `.gitignore`，2026-10-25 处理完毕）：
 
 - `~/.arkbox/`（凭证、原始档案、缓存、reports）
-- `site/`（Qoder 站点描述与发布状态）
+- `site/`（固定站点的发布状态与描述文件）
 - `docs/P0-验收/`、`docs/P1-demo/`、`docs/P1-final/`、`docs/真实数据*`、`docs/竞品参考/`
   （真实账号产物已移至 `~/Documents/Projects/历史归档/arkbox-真实账号产物-2026-10-25/`）
 - 过程文档：`产品策划书.md`、`prompt-for-chatgpt.md`、`docs/Kimi评审验收-P0P1P2.md`、`docs/参考-ChatGPT独立方案原稿.md`
@@ -47,8 +47,10 @@ grep -RnoE "UID[^<\n]{0,4}[0-9]{3,}" . --exclude-dir=.git --include="*.html"
 
 ## 5. 平台边界
 
-- Qoder：可以安装 skill，并用 `--site` 发布 Qoder Sites。
-- 其他 Agent：读取 `SKILL.md` 或直接调用 Python CLI；没有 Qoder Sites 时交付 `report.html`。
+- 任何 Agent：读取 `SKILL.md` 或直接调用 Python CLI；海报和 `report.html` 是所有平台都有的交付。
+- 固定站点：`--site` 生成 `dist/`（noindex、昵称固定"博士"、无 UID），可发布到任意静态托管
+  （GitHub Pages / Cloudflare Pages / Vercel 等）；`.arkbox-publish.json` 是发布请求清单，
+  Agent 具备站点发布能力时可直接读取发布。
 - 没有 Chrome/Edge/Chromium 的机器：只生成 HTML，不生成 PNG；在 README 中说明。
 - 跨平台视觉不承诺像素级一致；数据、HTML 结构、规则和文案一致。
 

@@ -1,9 +1,9 @@
-# 发布 / 更新 ArkBox 站点（Qoder Sites）
+# 发布 / 更新 ArkBox 固定站点
 
 ## 交付形态
 
-- **Qoder 用户**：`poster.png` + 固定站点 URL。
-- **Hermes / workbuddy / codex 等**：`poster.png` + 自包含 `report.html`。
+- **有固定站点需求**：`poster.png` + 站点目录（发布到你用的静态托管）。
+- **只要文件**：`poster.png` + 自包含 `report.html`。
 - 不再对外交付：海报源 HTML、手机截图、Markdown、交付说明。
 
 ## 生成站点目录
@@ -19,33 +19,24 @@ python3 <skill>/scripts/ark_gacha.py analyze \
 - `site/dist/index.html`：公开报告，昵称显示为“博士”，不含 UID，`noindex,nofollow,noarchive`；页头带入职天数
 - `site/dist/robots.txt`：`Disallow: /`
 - `site/.arkbox-site.json`：ArkBox 自己的发布元数据
-- `site/.arkbox-publish.json`：本次生成的精确发布请求（actionId/projectId/webDirectory）
-- `site/.ArkBox 寻访档案.qoder.site`：Qoder Sites 生成的描述文件，**不要手写/编辑**
+- `site/.arkbox-publish.json`：本次生成的精确发布请求（actionId/projectId/webDirectory），供具备站点发布能力的 Agent 直接读取
 
-## 第一次发布
+## 发布
 
-1. 在 Qoder 中读取当前站点目录与账号上下文：`qoder_sites get_context`。
-2. 可直接读取 `site/.arkbox-publish.json` 作为首次 prepare 请求；确认 `createNewSite: true`。
-3. `prepare_site`：
-   - `actionId`: 新 UUID
-   - `projectRoot`: `<项目根目录>/site`
-   - `webDirectory`: `dist`
-   - `createNewSite`: `true`
-   - `displayName`: `ArkBox 寻访档案`
-   - `slug`: `arkbox-archive`（或当前账号可用名）
-   - `spa`: `false`
-4. 读 `get_publish_status`，确认 `artifactReady/canPublish`。
-5. `publish_site`，继续读状态到 `published: true`；把 `.arkbox-publish.json` 的 `state` 改为 `published` 并记录 publishOperationId。
-6. `get_site_access` → `update_access_policy` 设 `public`，明确 `confirmPublic: true`。
-7. 把 `project_id`、`site_id`、`site_url` 写回 `site/.arkbox-site.json`（不是 `.qoder.site`）。
+方式一（任意静态托管）：把 `site/dist/` 整个目录上传到 GitHub Pages / Cloudflare Pages / Vercel /
+Netlify 等任意静态托管，即得固定 URL。
+
+方式二（Agent 代发）：把站点目录交给具备站点发布能力的 Agent（有 prepare/publish 类工具的），
+让它读取 `site/.arkbox-publish.json` 作为本次发布请求：首次 `createNewSite: true`，
+`projectRoot` 指向 `<项目根目录>/site`、`webDirectory: "dist"`；发布完成后把
+`project_id` / `site_id` / `site_url` 写回 `site/.arkbox-site.json`，并记得把访问策略设为公开。
 
 ## 后续更新同一站点
 
 1. 重新运行 `--site` 生成新的 `dist/`。
-2. 从 `site/.arkbox-site.json` 读取 `project_id`。
-3. 读取 `site/.arkbox-publish.json`，用其中的新 `actionId`、同一 `project_id`、`webDirectory: "dist"` 调用 `prepare_site`，不要 `createNewSite`。
-4. `publish_site` 同一个新 actionId，读状态到 `published: true`。
-5. 站点 URL 不变；`site/.arkbox-site.json` 保留原 ID 和 URL。
+2. 方式一重新同步 `dist/` 到原托管位置，URL 不变。
+3. 方式二从 `site/.arkbox-site.json` 读取 `project_id`，用 `.arkbox-publish.json` 里的新
+   `actionId`、同一 `project_id` 再次 prepare/publish，不要 `createNewSite`。
 
 ## 隐私
 
@@ -63,13 +54,3 @@ grep -oE 'UID[^<\n]{0,4}[0-9]{3,}' site/dist/index.html || echo "OK: 无 UID 展
 grep -o 'noindex,nofollow,noarchive' site/dist/index.html
 cat site/dist/robots.txt
 ```
-
-## 其他 Agent
-
-没有 Qoder Sites 时，直接生成：
-
-```bash
-python3 <skill>/scripts/ark_gacha.py analyze --poster --html
-```
-
-交付 `poster.png` + `report.html` 两个文件即可；`--poster` 默认不再保留海报源 HTML。

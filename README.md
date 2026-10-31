@@ -38,7 +38,7 @@ python3 skill/arkbox/scripts/ark_gacha.py analyze \
 | `analyze --poster --html` | 海报 PNG + 档案页 HTML | 最常用的交付：2160×2880 海报，加双页签自包含网页 |
 | `analyze --records 记录.json` | 同上 | 离线模式，不吃账号，用自己的记录文件 |
 | `ark_box.py gallery --open` | 干员图鉴页 | 按职业/星级/等级/潜能/时装筛选 |
-| `analyze --site --site-dir site` | 静态站点目录 | 发布到 Qoder Sites 的步骤见 [docs/PUBLISHING.md](docs/PUBLISHING.md) |
+| `analyze --site --site-dir site` | 静态站点目录 | 自带 noindex、昵称固定"博士"；发布到任意静态托管（见 [docs/PUBLISHING.md](docs/PUBLISHING.md)） |
 
 档案页里还有这些细节：卡池时间线、称号候选切换（欧皇、三顾茅庐、保底人……）、
 分享文案一键复制、口径审计表。

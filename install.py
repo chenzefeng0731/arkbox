@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Install the ArkBox skill for Qoder/Claude-like agents, or any custom path.
+"""Install the ArkBox skill into an agent's skills directory, or any custom path.
 
 This is intentionally dependency-free. The skill itself is portable Python;
 the target directory only decides where an agent reads SKILL.md and scripts.
@@ -73,7 +73,7 @@ def main():
     print(f"已安装: {target}")
     print("\n下一步：")
     print(f"  python3 {target / 'scripts' / 'skland_core.py'} login")
-    print("\n如果你在 Qoder 中：直接说「用 arkbox 分析我的抽卡记录」；")
+    print("\n在 Agent 里直接说「用 arkbox 分析我的抽卡记录」；")
     print("如果你在其他 Agent 中：让它读取目标目录的 SKILL.md，或直接调用 scripts/ark_gacha.py。")
 
     if not args.no_test:

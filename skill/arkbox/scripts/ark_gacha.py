@@ -575,8 +575,8 @@ def _finish_analysis(analyze_src, nick, cov, args, chars=None, profile=None):
         print(f"站点已生成: {site['index']}", file=sys.stderr)
         print(f"站点元数据: {site['meta_path']}", file=sys.stderr)
         print(f"发布请求: {site['publish_path']}", file=sys.stderr)
-        print("发布：在 Qoder 中由 Agent 读取 .arkbox-publish.json 调用 Qoder Sites prepare/publish。",
-              file=sys.stderr)
+        print("发布：把 dist/ 传到你用的静态托管即可；Agent 有站点发布能力时"
+              "可读 .arkbox-publish.json 直接发布。", file=sys.stderr)
     if (args.poster or args.html or getattr(args, "site", False)):
         return
     print(render_markdown(report, stats, detail=args.detail, limit=args.limit,

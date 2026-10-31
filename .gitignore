@@ -2,7 +2,7 @@ __pycache__/
 *.pyc
 .DS_Store
 
-# 本地站点发布状态与 Qoder Sites 描述文件
+# 本地站点发布状态与站点描述文件
 site/
 *.qoder.site
 
@@ -28,3 +28,5 @@ docs/地图图鉴-调研/
 
 # 生成产物（HTML 档案页/海报 PNG，含真实昵称，不进公开仓库）
 output/
+# 个人两条线维护说明（含自用 Agent 路径，不随仓库公开）
+docs/两条线说明.md
