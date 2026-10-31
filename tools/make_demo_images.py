@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""重新生成 README 演示图（docs/demo-*.png）。
+"""重新生成 README 与 showcase 页用到的演示图（docs/demo-*.png）。
 
 数据口径（与 fixtures/README.md 一致）：
 - 寻访记录：fixtures/demo-records.jsonl（合成，时间轴平移，无账号标识）；
@@ -40,10 +40,19 @@ TENURE = "2024-07-14"  # 页头「入职 · N 天」演示日期
 DOCS = ROOT / "docs"
 
 # 每张截图的视口（CSS 像素；物理像素 ×2）。寻访分析与泰拉图鉴保持同高，
-# README 里两张并排放才不会参差；分享弹层预览的就是海报本身，不再单独出图。
+# README 里两张并排放才不会参差。
 SHOTS = {
     "demo-archive.png": ("#gacha", 1440, 1560),
     "demo-terra.png": ("#terra", 1440, 1560),
+}
+
+# showcase 子页（docs/showcase.md）用的补充截图：
+# 分享弹层自动点「分享」按钮；完整档案页用 1x 截长图（2x 文件太大）；
+# 干员图鉴页用合成 box 直接渲染（gallery 命令本身需要登录）。
+SHOWCASE = {
+    "demo-share.png": ("modal", 1440, 1100, 2),
+    "demo-archive-full.png": ("#gacha", 1440, 3360, 1),
+    "demo-box.png": ("gallery", 1440, 1560, 2),
 }
 
 
@@ -93,7 +102,7 @@ def synth_box(records, meta_chars):
     return chars
 
 
-def shot(browser, html_path, out_png, width, height, frag="", extra_js=""):
+def shot(browser, html_path, out_png, width, height, frag="", extra_js="", scale=2):
     url = f"file://{html_path}{frag}"
     tmp = None
     if extra_js:
@@ -103,10 +112,10 @@ def shot(browser, html_path, out_png, width, height, frag="", extra_js=""):
                        encoding="utf-8")
         url = f"file://{tmp}"
     subprocess.run([browser, "--headless", "--disable-gpu", "--hide-scrollbars",
-                    "--force-device-scale-factor=2",
-                    "--virtual-time-budget=15000",  # 等懒加载头像落地
+                    f"--force-device-scale-factor={scale}",
+                    "--virtual-time-budget=20000",  # 等懒加载头像落地
                     f"--screenshot={out_png}", f"--window-size={width},{height}", url],
-                   capture_output=True, timeout=90)
+                   capture_output=True, timeout=120)
     if tmp:
         tmp.unlink()
     if not Path(out_png).exists():
@@ -147,6 +156,21 @@ def main():
 
         for name, (frag, w, hgt) in SHOTS.items():
             shot(browser, html, str(DOCS / name), w, hgt, frag=frag)
+            print(f"✓ docs/{name}", file=sys.stderr)
+
+        # 3) showcase 子页的补充截图
+        for name, (kind, w, hgt, scale) in SHOWCASE.items():
+            if kind == "modal":
+                js = ("window.addEventListener('load',function(){"
+                      "setTimeout(function(){var b=document.getElementById('fab-share');"
+                      "if(b)b.click();},500);});")
+                shot(browser, html, str(DOCS / name), w, hgt, extra_js=js, scale=scale)
+            elif kind == "gallery":
+                from ark_box import render_gallery
+                gal = render_gallery(chars, NICK, str(work / "box.html"))
+                shot(browser, gal, str(DOCS / name), w, hgt, scale=scale)
+            else:
+                shot(browser, html, str(DOCS / name), w, hgt, frag=kind, scale=scale)
             print(f"✓ docs/{name}", file=sys.stderr)
     finally:
         shutil.rmtree(work, ignore_errors=True)
